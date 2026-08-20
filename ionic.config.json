@@ -1,0 +1,7 @@
+{
+  "name": "car-service-tracker",
+  "integrations": {
+    "capacitor": {}
+  },
+  "type": "angular-standalone"
+}

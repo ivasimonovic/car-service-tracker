@@ -1,0 +1,9 @@
+<ion-app>
+  @if (authService.isReady$ | async) {
+    <ion-router-outlet></ion-router-outlet>
+  } @else {
+    <div class="app-splash">
+      <ion-spinner name="crescent"></ion-spinner>
+    </div>
+  }
+</ion-app>

@@ -1,0 +1,75 @@
+<ion-content [fullscreen]="true" class="auth-content">
+  <div class="auth-wrapper">
+    <div class="brand">
+      <ion-icon name="car-sport-outline"></ion-icon>
+      <h1>Napravite nalog</h1>
+      <p>Pratite servise svojih vozila bez papirologije.</p>
+    </div>
+
+    <form class="auth-form" [formGroup]="form" (ngSubmit)="onSubmit()">
+      <ion-item fill="outline" shape="round">
+        <ion-input
+          formControlName="displayName"
+          type="text"
+          label="Ime i prezime"
+          labelPlacement="floating"
+          autocomplete="name"
+        ></ion-input>
+      </ion-item>
+
+      <ion-item fill="outline" shape="round">
+        <ion-input
+          formControlName="email"
+          type="email"
+          label="Email"
+          labelPlacement="floating"
+          autocomplete="email"
+          inputmode="email"
+        ></ion-input>
+      </ion-item>
+
+      <ion-item fill="outline" shape="round">
+        <ion-input
+          formControlName="password"
+          type="password"
+          label="Lozinka"
+          labelPlacement="floating"
+          autocomplete="new-password"
+        >
+          <ion-input-password-toggle slot="end"></ion-input-password-toggle>
+        </ion-input>
+      </ion-item>
+
+      <ion-item fill="outline" shape="round">
+        <ion-input
+          formControlName="confirmPassword"
+          type="password"
+          label="Potvrdite lozinku"
+          labelPlacement="floating"
+          autocomplete="new-password"
+        >
+          <ion-input-password-toggle slot="end"></ion-input-password-toggle>
+        </ion-input>
+      </ion-item>
+
+      @if (form.errors?.['passwordMismatch'] && form.get('confirmPassword')?.touched) {
+        <ion-text color="danger" class="form-error">Lozinke se ne poklapaju.</ion-text>
+      }
+
+      @if (errorMessage()) {
+        <ion-text color="danger" class="form-error">{{ errorMessage() }}</ion-text>
+      }
+
+      <ion-button expand="block" shape="round" type="submit" [disabled]="isSubmitting()">
+        @if (isSubmitting()) {
+          <ion-spinner name="crescent" slot="start"></ion-spinner>
+        }
+        Registruj se
+      </ion-button>
+    </form>
+
+    <p class="switch-link">
+      Već imate nalog? <a routerLink="/login">Prijavite se</a>
+    </p>
+  </div>
+</ion-content>

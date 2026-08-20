@@ -1,0 +1,49 @@
+<ion-content [fullscreen]="true" class="auth-content">
+  <div class="auth-wrapper">
+    <div class="brand">
+      <ion-icon name="car-sport-outline"></ion-icon>
+      <h1>Car Service Tracker</h1>
+      <p>Evidencija servisa vaših vozila na jednom mestu.</p>
+    </div>
+
+    <form class="auth-form" [formGroup]="form" (ngSubmit)="onSubmit()">
+      <ion-item fill="outline" shape="round">
+        <ion-input
+          formControlName="email"
+          type="email"
+          label="Email"
+          labelPlacement="floating"
+          autocomplete="email"
+          inputmode="email"
+        ></ion-input>
+      </ion-item>
+
+      <ion-item fill="outline" shape="round">
+        <ion-input
+          formControlName="password"
+          type="password"
+          label="Lozinka"
+          labelPlacement="floating"
+          autocomplete="current-password"
+        >
+          <ion-input-password-toggle slot="end"></ion-input-password-toggle>
+        </ion-input>
+      </ion-item>
+
+      @if (errorMessage()) {
+        <ion-text color="danger" class="form-error">{{ errorMessage() }}</ion-text>
+      }
+
+      <ion-button expand="block" shape="round" type="submit" [disabled]="isSubmitting()">
+        @if (isSubmitting()) {
+          <ion-spinner name="crescent" slot="start"></ion-spinner>
+        }
+        Prijavi se
+      </ion-button>
+    </form>
+
+    <p class="switch-link">
+      Nemate nalog? <a routerLink="/register">Registrujte se</a>
+    </p>
+  </div>
+</ion-content>

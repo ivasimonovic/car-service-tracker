@@ -1,0 +1,21 @@
+<ion-header [translucent]="true">
+  <ion-toolbar>
+    <ion-title>Vaša vozila</ion-title>
+    <ion-buttons slot="end">
+      <ion-button (click)="onLogOut()">
+        <ion-icon slot="icon-only" name="log-out-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true" class="vehicles-content">
+  <div class="empty-state">
+    <ion-icon name="car-sport-outline"></ion-icon>
+    <h2>Nemate dodato vozilo.</h2>
+    <p>Dodajte svoje prvo vozilo da biste počeli praćenje servisa.</p>
+    @if (currentUser) {
+      <p class="signed-in-as">Prijavljeni ste kao {{ currentUser.displayName || currentUser.email }}</p>
+    }
+  </div>
+</ion-content>
