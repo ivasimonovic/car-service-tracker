@@ -10,12 +10,46 @@
 </ion-header>
 
 <ion-content [fullscreen]="true" class="vehicles-content">
-  <div class="empty-state">
-    <ion-icon name="car-sport-outline"></ion-icon>
-    <h2>Nemate dodato vozilo.</h2>
-    <p>Dodajte svoje prvo vozilo da biste počeli praćenje servisa.</p>
-    @if (currentUser) {
-      <p class="signed-in-as">Prijavljeni ste kao {{ currentUser.displayName || currentUser.email }}</p>
-    }
-  </div>
+  @if (loadError()) {
+    <ion-text color="danger" class="load-error">{{ loadError() }}</ion-text>
+  }
+  @if (vehicles().length === 0) {
+    <div class="empty-state">
+      <ion-icon name="car-sport-outline"></ion-icon>
+      <h2>Nemate dodato vozilo.</h2>
+      <p>Dodajte svoje prvo vozilo da biste počeli praćenje servisa.</p>
+      @if (currentUser) {
+        <p class="signed-in-as">Prijavljeni ste kao {{ currentUser.displayName || currentUser.email }}</p>
+      }
+    </div>
+  } @else {
+    <ion-list>
+      @for (vehicle of vehicles(); track vehicle.id) {
+        <ion-item-sliding #slidingItem>
+          <ion-item [routerLink]="['/vehicles', vehicle.id, 'edit']" detail="true">
+            <ion-icon name="car-sport-outline" slot="start"></ion-icon>
+            <ion-label>
+              <h2>{{ vehicle.brand }} {{ vehicle.model }} ({{ vehicle.year }})</h2>
+              <p>{{ vehicle.registrationNumber }} &middot; {{ vehicle.engine }}</p>
+              <p class="mileage">
+                <ion-icon name="speedometer-outline"></ion-icon>
+                {{ vehicle.currentMileage | number }} km
+              </p>
+            </ion-label>
+          </ion-item>
+          <ion-item-options side="end">
+            <ion-item-option color="danger" (click)="onDelete(vehicle.id, slidingItem)">
+              <ion-icon slot="icon-only" name="trash-outline"></ion-icon>
+            </ion-item-option>
+          </ion-item-options>
+        </ion-item-sliding>
+      }
+    </ion-list>
+  }
+
+  <ion-fab vertical="bottom" horizontal="end" slot="fixed">
+    <ion-fab-button routerLink="/vehicles/new">
+      <ion-icon name="add-outline"></ion-icon>
+    </ion-fab-button>
+  </ion-fab>
 </ion-content>

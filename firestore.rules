@@ -8,8 +8,14 @@ service cloud.firestore {
       allow read, write: if request.auth != null && request.auth.uid == userId;
     }
 
-    // Napomena: kolekcije vehicles / serviceRecords (sa pravilima po userId
-    // vlasništvu) dodaju se u narednim sprintovima. Do tada Firestore po
-    // difoltu odbija pristup svemu što nije eksplicitno dozvoljeno gore.
+    // Vozila - korisnik sme da čita/menja/briše samo svoja vozila.
+    match /vehicles/{vehicleId} {
+      allow read, update, delete: if request.auth != null && request.auth.uid == resource.data.userId;
+      allow create: if request.auth != null && request.auth.uid == request.resource.data.userId;
+    }
+
+    // Napomena: kolekcija serviceRecords (sa pravilima po userId vlasništvu)
+    // dodaje se u narednim sprintovima. Do tada Firestore po difoltu odbija
+    // pristup svemu što nije eksplicitno dozvoljeno gore.
   }
 }

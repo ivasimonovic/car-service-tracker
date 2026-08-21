@@ -1,0 +1,104 @@
+<ion-header [translucent]="true">
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/vehicles"></ion-back-button>
+    </ion-buttons>
+    <ion-title>{{ isEditMode() ? 'Izmeni vozilo' : 'Novo vozilo' }}</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true" class="vehicle-form-content">
+  @if (isLoading()) {
+    <div class="loading-state">
+      <ion-spinner name="crescent"></ion-spinner>
+    </div>
+  } @else {
+    <form class="vehicle-form" [class.is-saving]="isSubmitting()" [formGroup]="form" (ngSubmit)="onSubmit()">
+      <ion-item fill="outline" shape="round">
+        <ion-input
+          formControlName="brand"
+          type="text"
+          label="Marka"
+          labelPlacement="floating"
+          placeholder="npr. Volkswagen"
+        ></ion-input>
+      </ion-item>
+
+      <ion-item fill="outline" shape="round">
+        <ion-input
+          formControlName="model"
+          type="text"
+          label="Model"
+          labelPlacement="floating"
+          placeholder="npr. Golf 7"
+        ></ion-input>
+      </ion-item>
+
+      <ion-item fill="outline" shape="round">
+        <ion-input
+          formControlName="year"
+          type="number"
+          inputmode="numeric"
+          label="Godište"
+          labelPlacement="floating"
+        ></ion-input>
+      </ion-item>
+
+      <ion-item fill="outline" shape="round">
+        <ion-input
+          formControlName="registrationNumber"
+          type="text"
+          label="Registarska oznaka"
+          labelPlacement="floating"
+          placeholder="npr. NS-123-AB"
+        ></ion-input>
+      </ion-item>
+
+      <ion-item fill="outline" shape="round">
+        <ion-select formControlName="fuelType" label="Gorivo" labelPlacement="floating" interface="popover">
+          @for (option of fuelTypes; track option.value) {
+            <ion-select-option [value]="option.value">{{ option.label }}</ion-select-option>
+          }
+        </ion-select>
+      </ion-item>
+
+      <ion-item fill="outline" shape="round">
+        <ion-input
+          formControlName="engine"
+          type="text"
+          label="Motor"
+          labelPlacement="floating"
+          placeholder="npr. 1.6 TDI 77kW"
+        ></ion-input>
+      </ion-item>
+
+      <ion-item fill="outline" shape="round">
+        <ion-input
+          formControlName="currentMileage"
+          type="number"
+          inputmode="numeric"
+          label="Trenutna kilometraža (km)"
+          labelPlacement="floating"
+        ></ion-input>
+      </ion-item>
+
+      @if (errorMessage()) {
+        <ion-text color="danger" class="form-error">{{ errorMessage() }}</ion-text>
+      }
+
+      <ion-button expand="block" shape="round" type="submit" [disabled]="isSubmitting()">
+        @if (isSubmitting()) {
+          <ion-spinner name="crescent" slot="start"></ion-spinner>
+        }
+        {{ isEditMode() ? 'Sačuvaj izmene' : 'Dodaj vozilo' }}
+      </ion-button>
+
+      @if (isSubmitting()) {
+        <div class="saving-overlay">
+          <ion-spinner name="crescent"></ion-spinner>
+          <p>Čuvanje vozila...</p>
+        </div>
+      }
+    </form>
+  }
+</ion-content>

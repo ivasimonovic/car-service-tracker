@@ -1,0 +1,133 @@
+import { Component, OnInit, computed, inject, input, signal } from '@angular/core';
+import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { Router } from '@angular/router';
+import {
+  IonBackButton,
+  IonButton,
+  IonButtons,
+  IonContent,
+  IonHeader,
+  IonInput,
+  IonItem,
+  IonSelect,
+  IonSelectOption,
+  IonSpinner,
+  IonText,
+  IonTitle,
+  IonToolbar,
+} from '@ionic/angular';
+import { FuelType, VehicleInput } from '../../models/vehicle.model';
+import { VehicleService } from '../vehicle.service';
+
+@Component({
+  selector: 'app-vehicle-form',
+  templateUrl: './vehicle-form.page.html',
+  styleUrls: ['./vehicle-form.page.scss'],
+  imports: [
+    ReactiveFormsModule,
+    IonHeader,
+    IonToolbar,
+    IonTitle,
+    IonButtons,
+    IonBackButton,
+    IonContent,
+    IonItem,
+    IonInput,
+    IonSelect,
+    IonSelectOption,
+    IonText,
+    IonButton,
+    IonSpinner,
+  ],
+})
+export class VehicleFormPage implements OnInit {
+  private readonly fb = inject(FormBuilder);
+  private readonly vehicleService = inject(VehicleService);
+  private readonly router = inject(Router);
+
+  readonly id = input<string>();
+  readonly isEditMode = computed(() => !!this.id());
+
+  readonly isLoading = signal(false);
+  readonly isSubmitting = signal(false);
+  readonly errorMessage = signal<string | null>(null);
+
+  readonly fuelTypes: { value: FuelType; label: string }[] = [
+    { value: 'benzin', label: 'Benzin' },
+    { value: 'dizel', label: 'Dizel' },
+    { value: 'hibrid', label: 'Hibrid' },
+    { value: 'električni', label: 'Električni' },
+    { value: 'gas', label: 'Gas (TNG/CNG)' },
+  ];
+
+  readonly form = this.fb.nonNullable.group({
+    brand: ['', [Validators.required, Validators.minLength(2)]],
+    model: ['', [Validators.required, Validators.minLength(1)]],
+    year: [String(new Date().getFullYear()), [Validators.required, Validators.pattern(/^(19|20)\d{2}$/)]],
+    registrationNumber: ['', [Validators.required]],
+    fuelType: ['benzin' as FuelType, [Validators.required]],
+    engine: ['', [Validators.required]],
+    currentMileage: ['0', [Validators.required, Validators.pattern(/^\d+$/)]],
+  });
+
+  async ngOnInit(): Promise<void> {
+    const vehicleId = this.id();
+    if (!vehicleId) return;
+
+    this.isLoading.set(true);
+    try {
+      const vehicle = await this.vehicleService.getVehicle(vehicleId);
+      if (!vehicle) {
+        this.errorMessage.set('Vozilo nije pronađeno.');
+        return;
+      }
+      this.form.patchValue({
+        brand: vehicle.brand,
+        model: vehicle.model,
+        year: String(vehicle.year),
+        registrationNumber: vehicle.registrationNumber,
+        fuelType: vehicle.fuelType,
+        engine: vehicle.engine,
+        currentMileage: String(vehicle.currentMileage),
+      });
+    } catch {
+      this.errorMessage.set('Greška pri učitavanju vozila.');
+    } finally {
+      this.isLoading.set(false);
+    }
+  }
+
+  async onSubmit(): Promise<void> {
+    if (this.form.invalid || this.isSubmitting()) {
+      this.form.markAllAsTouched();
+      return;
+    }
+
+    this.errorMessage.set(null);
+    this.isSubmitting.set(true);
+    const raw = this.form.getRawValue();
+    const value: VehicleInput = {
+      brand: raw.brand.trim(),
+      model: raw.model.trim(),
+      year: Number(raw.year),
+      registrationNumber: raw.registrationNumber.trim().toUpperCase(),
+      fuelType: raw.fuelType,
+      engine: raw.engine.trim(),
+      currentMileage: Number(raw.currentMileage),
+    };
+
+    try {
+      const vehicleId = this.id();
+      if (vehicleId) {
+        await this.vehicleService.updateVehicle(vehicleId, value);
+      } else {
+        await this.vehicleService.addVehicle(value);
+      }
+      await this.router.navigateByUrl('/vehicles');
+    } catch {
+      this.errorMessage.set('Došlo je do greške. Pokušajte ponovo.');
+    } finally {
+      this.isSubmitting.set(false);
+    }
+  }
+}
