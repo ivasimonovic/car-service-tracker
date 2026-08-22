@@ -16,6 +16,8 @@ import {
   IonTitle,
   IonToolbar,
 } from '@ionic/angular';
+import { CarBrandService } from '../../core/car-brand.service';
+import { CarBrand } from '../../models/car-brand.model';
 import { FuelType, VehicleInput } from '../../models/vehicle.model';
 import { VehicleService } from '../vehicle.service';
 
@@ -43,6 +45,7 @@ import { VehicleService } from '../vehicle.service';
 export class VehicleFormPage implements OnInit {
   private readonly fb = inject(FormBuilder);
   private readonly vehicleService = inject(VehicleService);
+  private readonly carBrandService = inject(CarBrandService);
   private readonly router = inject(Router);
 
   readonly id = input<string>();
@@ -51,6 +54,7 @@ export class VehicleFormPage implements OnInit {
   readonly isLoading = signal(false);
   readonly isSubmitting = signal(false);
   readonly errorMessage = signal<string | null>(null);
+  readonly brands = signal<CarBrand[]>([]);
 
   readonly fuelTypes: { value: FuelType; label: string }[] = [
     { value: 'benzin', label: 'Benzin' },
@@ -61,7 +65,7 @@ export class VehicleFormPage implements OnInit {
   ];
 
   readonly form = this.fb.nonNullable.group({
-    brand: ['', [Validators.required, Validators.minLength(2)]],
+    brand: ['', [Validators.required]],
     model: ['', [Validators.required, Validators.minLength(1)]],
     year: [String(new Date().getFullYear()), [Validators.required, Validators.pattern(/^(19|20)\d{2}$/)]],
     registrationNumber: ['', [Validators.required]],
@@ -71,11 +75,13 @@ export class VehicleFormPage implements OnInit {
   });
 
   async ngOnInit(): Promise<void> {
-    const vehicleId = this.id();
-    if (!vehicleId) return;
-
     this.isLoading.set(true);
     try {
+      this.brands.set(await this.carBrandService.getBrands());
+
+      const vehicleId = this.id();
+      if (!vehicleId) return;
+
       const vehicle = await this.vehicleService.getVehicle(vehicleId);
       if (!vehicle) {
         this.errorMessage.set('Vozilo nije pronađeno.');

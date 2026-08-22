@@ -13,13 +13,12 @@ export interface ServiceRecord {
 
 export type ServiceRecordInput = Omit<ServiceRecord, 'id' | 'userId' | 'createdAt' | 'updatedAt'>;
 
-/** Stavka jednog servisa (npr. zamena ulja) - koristi se od Sprinta 4 za kompletan servis sa više stavki. */
+/** Stavka jednog servisa (npr. zamena ulja), čuva se u podkolekciji serviceRecords/{id}/items. */
 export interface ServiceItem {
   id: string;
-  serviceRecordId: string;
-  type: string;
   name: string;
   price: number;
   replacementIntervalKm: number;
-  note: string;
 }
+
+export type ServiceItemInput = Omit<ServiceItem, 'id'>;

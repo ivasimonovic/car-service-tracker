@@ -52,3 +52,62 @@
   font-size: 13px;
   text-align: center;
 }
+
+.items-title {
+  font-size: 14px;
+  font-weight: 700;
+  margin: 8px 0 0;
+}
+
+.items-empty {
+  color: var(--ion-color-medium);
+  font-size: 13px;
+  margin: 0;
+}
+
+.items-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+
+  li {
+    display: flex;
+    justify-content: space-between;
+    font-size: 14px;
+    padding: 8px 12px;
+    background: var(--ion-color-light, #f4f5f8);
+    border-radius: 8px;
+
+    .price {
+      color: var(--ion-color-medium);
+    }
+  }
+}
+
+.items-total {
+  text-align: right;
+  font-weight: 700;
+  font-size: 14px;
+  margin: 4px 4px 0;
+}
+
+.catalog-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+
+  ion-item {
+    --padding-start: 0;
+    --inner-padding-end: 0;
+  }
+}
+
+.price-input {
+  margin-top: 4px;
+}

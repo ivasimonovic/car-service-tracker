@@ -18,6 +18,26 @@ service cloud.firestore {
     match /serviceRecords/{recordId} {
       allow read, update, delete: if request.auth != null && request.auth.uid == resource.data.userId;
       allow create: if request.auth != null && request.auth.uid == request.resource.data.userId;
+
+      // Stavke servisa (podkolekcija) - userId je denormalizovan na svaku stavku
+      // (umesto get() ka roditelju) da bi provera radila i unutar iste transakcije
+      // koja kreira i roditeljski servis i stavke odjednom.
+      match /items/{itemId} {
+        allow read, update, delete: if request.auth != null && request.auth.uid == resource.data.userId;
+        allow create: if request.auth != null && request.auth.uid == request.resource.data.userId;
+      }
+    }
+
+    // Referentni katalozi (marke vozila, tipovi stavki servisa) - čitanje svim prijavljenim
+    // korisnicima, upis samo preko admin/seed skripte (van aplikacije).
+    match /vehicleBrands/{brandId} {
+      allow read: if request.auth != null;
+      allow write: if false;
+    }
+
+    match /serviceItemTypes/{itemTypeId} {
+      allow read: if request.auth != null;
+      allow write: if false;
     }
   }
 }

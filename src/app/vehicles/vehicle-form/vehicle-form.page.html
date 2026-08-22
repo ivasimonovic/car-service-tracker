@@ -15,13 +15,11 @@
   } @else {
     <form class="vehicle-form" [class.is-saving]="isSubmitting()" [formGroup]="form" (ngSubmit)="onSubmit()">
       <ion-item fill="outline" shape="round">
-        <ion-input
-          formControlName="brand"
-          type="text"
-          label="Marka"
-          labelPlacement="floating"
-          placeholder="npr. Volkswagen"
-        ></ion-input>
+        <ion-select formControlName="brand" label="Marka" labelPlacement="floating" interface="popover">
+          @for (brand of brands(); track brand.id) {
+            <ion-select-option [value]="brand.name">{{ brand.name }}</ion-select-option>
+          }
+        </ion-select>
       </ion-item>
 
       <ion-item fill="outline" shape="round">

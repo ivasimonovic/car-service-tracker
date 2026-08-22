@@ -18,15 +18,16 @@
         <ion-input formControlName="date" type="date" label="Datum servisa" labelPlacement="floating"></ion-input>
       </ion-item>
 
-      <ion-item fill="outline" shape="round">
-        <ion-input
-          formControlName="serviceType"
-          type="text"
-          label="Vrsta servisa"
-          labelPlacement="floating"
-          placeholder="npr. Redovan servis"
-        ></ion-input>
-      </ion-item>
+      @if (isEditMode()) {
+        <ion-item fill="outline" shape="round">
+          <ion-input
+            formControlName="serviceType"
+            type="text"
+            label="Naziv servisa"
+            labelPlacement="floating"
+          ></ion-input>
+        </ion-item>
+      }
 
       <ion-item fill="outline" shape="round">
         <ion-input
@@ -39,16 +40,6 @@
       </ion-item>
 
       <ion-item fill="outline" shape="round">
-        <ion-input
-          formControlName="totalPrice"
-          type="number"
-          inputmode="decimal"
-          label="Cena (RSD)"
-          labelPlacement="floating"
-        ></ion-input>
-      </ion-item>
-
-      <ion-item fill="outline" shape="round">
         <ion-textarea
           formControlName="note"
           label="Napomena (opciono)"
@@ -56,6 +47,52 @@
           autoGrow="true"
         ></ion-textarea>
       </ion-item>
+
+      @if (isEditMode()) {
+        <h2 class="items-title">Stavke servisa</h2>
+        @if (existingItems().length === 0) {
+          <p class="items-empty">Ovaj servis nema evidentiranih stavki.</p>
+        } @else {
+          <ul class="items-list">
+            @for (item of existingItems(); track item.id) {
+              <li>
+                <span>{{ item.name }}</span>
+                <span class="price">{{ item.price | number }} RSD</span>
+              </li>
+            }
+          </ul>
+          <p class="items-total">Ukupno: {{ existingTotalPrice() | number }} RSD</p>
+        }
+      } @else {
+        <h2 class="items-title">Stavke servisa - šta je odrađeno?</h2>
+        <ul class="catalog-list">
+          @for (item of catalogSelections(); track item.entry.id; let i = $index) {
+            <li class="catalog-item">
+              <ion-item lines="none">
+                <ion-checkbox
+                  slot="start"
+                  [checked]="item.selected"
+                  (ionChange)="toggleItem(i, $event.detail.checked)"
+                ></ion-checkbox>
+                <ion-label>{{ item.entry.name }}</ion-label>
+              </ion-item>
+              @if (item.selected) {
+                <ion-item fill="outline" shape="round" class="price-input">
+                  <ion-input
+                    type="number"
+                    inputmode="decimal"
+                    label="Cena (RSD)"
+                    labelPlacement="floating"
+                    [value]="item.price"
+                    (ionInput)="updateItemPrice(i, $event.detail.value)"
+                  ></ion-input>
+                </ion-item>
+              }
+            </li>
+          }
+        </ul>
+        <p class="items-total">Ukupno: {{ newTotalPrice() | number }} RSD</p>
+      }
 
       @if (errorMessage()) {
         <ion-text color="danger" class="form-error">{{ errorMessage() }}</ion-text>

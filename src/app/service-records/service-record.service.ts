@@ -2,14 +2,15 @@ import { Injectable, inject } from '@angular/core';
 import {
   DocumentData,
   Timestamp,
-  addDoc,
   collection,
   deleteDoc,
   doc,
   getDoc,
+  getDocs,
   onSnapshot,
   orderBy,
   query,
+  runTransaction,
   serverTimestamp,
   updateDoc,
   where,
@@ -17,9 +18,11 @@ import {
 import { Observable } from 'rxjs';
 import { AuthService } from '../auth/auth.service';
 import { firestore } from '../core/firebase';
-import { ServiceRecord, ServiceRecordInput } from '../models/service-record.model';
+import { ServiceItem, ServiceItemInput, ServiceRecord, ServiceRecordInput } from '../models/service-record.model';
 
 const SERVICE_RECORDS_COLLECTION = 'serviceRecords';
+const SERVICE_ITEMS_SUBCOLLECTION = 'items';
+const VEHICLES_COLLECTION = 'vehicles';
 
 function toServiceRecord(id: string, data: DocumentData): ServiceRecord {
   return {
@@ -33,6 +36,15 @@ function toServiceRecord(id: string, data: DocumentData): ServiceRecord {
     totalPrice: data['totalPrice'],
     createdAt: data['createdAt']?.toDate() ?? null,
     updatedAt: data['updatedAt']?.toDate() ?? null,
+  };
+}
+
+function toServiceItem(id: string, data: DocumentData): ServiceItem {
+  return {
+    id,
+    name: data['name'],
+    price: data['price'],
+    replacementIntervalKm: data['replacementIntervalKm'],
   };
 }
 
@@ -63,20 +75,6 @@ export class ServiceRecordService {
     return snapshot.exists() ? toServiceRecord(snapshot.id, snapshot.data()) : null;
   }
 
-  async addServiceRecord(input: ServiceRecordInput): Promise<string> {
-    const userId = this.authService.currentUser?.uid;
-    if (!userId) throw new Error('Korisnik nije prijavljen.');
-
-    const docRef = await addDoc(collection(firestore, SERVICE_RECORDS_COLLECTION), {
-      ...input,
-      date: Timestamp.fromDate(input.date ?? new Date()),
-      userId,
-      createdAt: serverTimestamp(),
-      updatedAt: serverTimestamp(),
-    });
-    return docRef.id;
-  }
-
   async updateServiceRecord(id: string, input: ServiceRecordInput): Promise<void> {
     await updateDoc(doc(firestore, SERVICE_RECORDS_COLLECTION, id), {
       ...input,
@@ -87,5 +85,51 @@ export class ServiceRecordService {
 
   async deleteServiceRecord(id: string): Promise<void> {
     await deleteDoc(doc(firestore, SERVICE_RECORDS_COLLECTION, id));
+  }
+
+  async getServiceItems(recordId: string): Promise<ServiceItem[]> {
+    const snapshot = await getDocs(
+      collection(firestore, SERVICE_RECORDS_COLLECTION, recordId, SERVICE_ITEMS_SUBCOLLECTION),
+    );
+    return snapshot.docs.map((docSnap) => toServiceItem(docSnap.id, docSnap.data()));
+  }
+
+  /**
+   * Složeni slučaj korišćenja: jednim korisničkim dejstvom, u jednoj Firestore transakciji,
+   * kreira servis (serviceRecords), sve njegove stavke (podkolekcija items) i po potrebi
+   * podiže trenutnu kilometražu vozila - sve ili ništa, atomski.
+   */
+  async addCompleteService(input: ServiceRecordInput, items: ServiceItemInput[]): Promise<string> {
+    const userId = this.authService.currentUser?.uid;
+    if (!userId) throw new Error('Korisnik nije prijavljen.');
+
+    const totalPrice = items.reduce((sum, item) => sum + item.price, 0);
+    const recordRef = doc(collection(firestore, SERVICE_RECORDS_COLLECTION));
+    const vehicleRef = doc(firestore, VEHICLES_COLLECTION, input.vehicleId);
+
+    await runTransaction(firestore, async (transaction) => {
+      const vehicleSnap = await transaction.get(vehicleRef);
+      const currentMileage: number = vehicleSnap.data()?.['currentMileage'] ?? 0;
+
+      transaction.set(recordRef, {
+        ...input,
+        totalPrice,
+        date: Timestamp.fromDate(input.date ?? new Date()),
+        userId,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      });
+
+      for (const item of items) {
+        const itemRef = doc(collection(recordRef, SERVICE_ITEMS_SUBCOLLECTION));
+        transaction.set(itemRef, { ...item, userId });
+      }
+
+      if (input.mileage > currentMileage) {
+        transaction.update(vehicleRef, { currentMileage: input.mileage, updatedAt: serverTimestamp() });
+      }
+    });
+
+    return recordRef.id;
   }
 }
