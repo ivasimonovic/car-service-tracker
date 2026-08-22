@@ -21,6 +21,9 @@
           }
         </ion-select>
       </ion-item>
+      @if (errorFor('brand'); as msg) {
+        <ion-text color="danger" class="field-error">{{ msg }}</ion-text>
+      }
 
       <ion-item fill="outline" shape="round">
         <ion-input
@@ -31,6 +34,9 @@
           placeholder="npr. Golf 7"
         ></ion-input>
       </ion-item>
+      @if (errorFor('model'); as msg) {
+        <ion-text color="danger" class="field-error">{{ msg }}</ion-text>
+      }
 
       <ion-item fill="outline" shape="round">
         <ion-input
@@ -41,6 +47,9 @@
           labelPlacement="floating"
         ></ion-input>
       </ion-item>
+      @if (errorFor('year'); as msg) {
+        <ion-text color="danger" class="field-error">{{ msg }}</ion-text>
+      }
 
       <ion-item fill="outline" shape="round">
         <ion-input
@@ -51,6 +60,9 @@
           placeholder="npr. NS-123-AB"
         ></ion-input>
       </ion-item>
+      @if (errorFor('registrationNumber'); as msg) {
+        <ion-text color="danger" class="field-error">{{ msg }}</ion-text>
+      }
 
       <ion-item fill="outline" shape="round">
         <ion-select formControlName="fuelType" label="Gorivo" labelPlacement="floating" interface="popover">
@@ -69,6 +81,9 @@
           placeholder="npr. 1.6 TDI 77kW"
         ></ion-input>
       </ion-item>
+      @if (errorFor('engine'); as msg) {
+        <ion-text color="danger" class="field-error">{{ msg }}</ion-text>
+      }
 
       <ion-item fill="outline" shape="round">
         <ion-input
@@ -79,6 +94,9 @@
           labelPlacement="floating"
         ></ion-input>
       </ion-item>
+      @if (errorFor('currentMileage'); as msg) {
+        <ion-text color="danger" class="field-error">{{ msg }}</ion-text>
+      }
 
       @if (errorMessage()) {
         <ion-text color="danger" class="form-error">{{ errorMessage() }}</ion-text>

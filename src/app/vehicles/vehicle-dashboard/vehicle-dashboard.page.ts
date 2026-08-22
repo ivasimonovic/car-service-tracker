@@ -81,6 +81,7 @@ export class VehicleDashboardPage implements ViewWillEnter, ViewWillLeave {
 
   readonly vehicle = signal<Vehicle | null>(null);
   readonly serviceRecords = signal<ServiceRecord[]>([]);
+  readonly recordsLoaded = signal(false);
   readonly maintenanceStatuses = signal<MaintenanceStatus[]>([]);
   readonly loadError = signal<string | null>(null);
 
@@ -117,6 +118,7 @@ export class VehicleDashboardPage implements ViewWillEnter, ViewWillLeave {
 
   ionViewWillEnter(): void {
     this.loadError.set(null);
+    this.recordsLoaded.set(false);
     const vehicleId = this.id();
 
     this.vehicleSubscription = this.vehicleService.getVehicleById$(vehicleId).subscribe({
@@ -128,10 +130,14 @@ export class VehicleDashboardPage implements ViewWillEnter, ViewWillLeave {
     });
 
     this.recordsSubscription = this.serviceRecordService.getServiceRecords$(vehicleId).subscribe({
-      next: (records) => this.serviceRecords.set(records),
+      next: (records) => {
+        this.serviceRecords.set(records);
+        this.recordsLoaded.set(true);
+      },
       error: (error) => {
         console.error('Greška pri učitavanju istorije servisa', error);
         this.loadError.set('Greška pri učitavanju istorije servisa. Proverite internet konekciju.');
+        this.recordsLoaded.set(true);
       },
     });
   }

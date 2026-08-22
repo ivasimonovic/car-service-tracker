@@ -17,6 +17,9 @@
           inputmode="email"
         ></ion-input>
       </ion-item>
+      @if (errorFor('email'); as msg) {
+        <ion-text color="danger" class="field-error">{{ msg }}</ion-text>
+      }
 
       <ion-item fill="outline" shape="round">
         <ion-input
@@ -29,6 +32,9 @@
           <ion-input-password-toggle slot="end"></ion-input-password-toggle>
         </ion-input>
       </ion-item>
+      @if (errorFor('password'); as msg) {
+        <ion-text color="danger" class="field-error">{{ msg }}</ion-text>
+      }
 
       @if (errorMessage()) {
         <ion-text color="danger" class="form-error">{{ errorMessage() }}</ion-text>

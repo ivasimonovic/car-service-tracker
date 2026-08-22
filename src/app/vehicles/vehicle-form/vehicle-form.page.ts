@@ -19,7 +19,17 @@ import {
 import { CarBrandService } from '../../core/car-brand.service';
 import { CarBrand } from '../../models/car-brand.model';
 import { FuelType, VehicleInput } from '../../models/vehicle.model';
+import { firstFieldError } from '../../shared/form-errors';
 import { VehicleService } from '../vehicle.service';
+
+const FIELD_MESSAGES: Record<string, Record<string, string>> = {
+  brand: { required: 'Izaberite marku vozila.' },
+  model: { required: 'Model je obavezan.' },
+  year: { required: 'Godište je obavezno.', pattern: 'Unesite ispravnu godinu (npr. 2018).' },
+  registrationNumber: { required: 'Registarska oznaka je obavezna.' },
+  engine: { required: 'Motor je obavezan.' },
+  currentMileage: { required: 'Kilometraža je obavezna.', pattern: 'Unesite ispravnu kilometražu (samo brojevi).' },
+};
 
 @Component({
   selector: 'app-vehicle-form',
@@ -101,6 +111,11 @@ export class VehicleFormPage implements OnInit {
     } finally {
       this.isLoading.set(false);
     }
+  }
+
+  errorFor(field: string): string | null {
+    const key = firstFieldError(this.form.get(field));
+    return key ? (FIELD_MESSAGES[field]?.[key] ?? 'Neispravna vrednost.') : null;
   }
 
   async onSubmit(): Promise<void> {

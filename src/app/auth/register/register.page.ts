@@ -13,7 +13,15 @@ import {
 } from '@ionic/angular';
 import { addIcons } from 'ionicons';
 import { carSportOutline } from 'ionicons/icons';
+import { firstFieldError } from '../../shared/form-errors';
 import { AuthService } from '../auth.service';
+
+const FIELD_MESSAGES: Record<string, Record<string, string>> = {
+  displayName: { required: 'Ime i prezime su obavezni.', minlength: 'Unesite bar 2 karaktera.' },
+  email: { required: 'Email je obavezan.', email: 'Unesite ispravnu email adresu.' },
+  password: { required: 'Lozinka je obavezna.', minlength: 'Lozinka mora imati bar 6 karaktera.' },
+  confirmPassword: { required: 'Potvrda lozinke je obavezna.' },
+};
 
 function passwordsMatchValidator(control: AbstractControl): ValidationErrors | null {
   const password = control.get('password')?.value;
@@ -58,6 +66,11 @@ export class RegisterPage {
 
   constructor() {
     addIcons({ carSportOutline });
+  }
+
+  errorFor(field: string): string | null {
+    const key = firstFieldError(this.form.get(field));
+    return key ? (FIELD_MESSAGES[field]?.[key] ?? 'Neispravna vrednost.') : null;
   }
 
   async onSubmit(): Promise<void> {

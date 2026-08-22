@@ -61,7 +61,11 @@
 
     <h2 class="section-title">Istorija servisa</h2>
 
-    @if (serviceRecords().length === 0) {
+    @if (!recordsLoaded()) {
+      <div class="loading-state records-loading">
+        <ion-spinner name="crescent"></ion-spinner>
+      </div>
+    } @else if (serviceRecords().length === 0) {
       <div class="empty-state">
         <ion-icon name="build-outline"></ion-icon>
         <p>Nema evidentiranih servisa za ovo vozilo.</p>

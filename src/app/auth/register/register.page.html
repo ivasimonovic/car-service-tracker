@@ -16,6 +16,9 @@
           autocomplete="name"
         ></ion-input>
       </ion-item>
+      @if (errorFor('displayName'); as msg) {
+        <ion-text color="danger" class="field-error">{{ msg }}</ion-text>
+      }
 
       <ion-item fill="outline" shape="round">
         <ion-input
@@ -27,6 +30,9 @@
           inputmode="email"
         ></ion-input>
       </ion-item>
+      @if (errorFor('email'); as msg) {
+        <ion-text color="danger" class="field-error">{{ msg }}</ion-text>
+      }
 
       <ion-item fill="outline" shape="round">
         <ion-input
@@ -39,6 +45,9 @@
           <ion-input-password-toggle slot="end"></ion-input-password-toggle>
         </ion-input>
       </ion-item>
+      @if (errorFor('password'); as msg) {
+        <ion-text color="danger" class="field-error">{{ msg }}</ion-text>
+      }
 
       <ion-item fill="outline" shape="round">
         <ion-input
@@ -51,6 +60,9 @@
           <ion-input-password-toggle slot="end"></ion-input-password-toggle>
         </ion-input>
       </ion-item>
+      @if (errorFor('confirmPassword'); as msg) {
+        <ion-text color="danger" class="field-error">{{ msg }}</ion-text>
+      }
 
       @if (form.errors?.['passwordMismatch'] && form.get('confirmPassword')?.touched) {
         <ion-text color="danger" class="form-error">Lozinke se ne poklapaju.</ion-text>

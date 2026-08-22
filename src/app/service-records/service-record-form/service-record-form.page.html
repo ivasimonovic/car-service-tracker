@@ -17,6 +17,9 @@
       <ion-item fill="outline" shape="round">
         <ion-input formControlName="date" type="date" label="Datum servisa" labelPlacement="floating"></ion-input>
       </ion-item>
+      @if (errorFor('date'); as msg) {
+        <ion-text color="danger" class="field-error">{{ msg }}</ion-text>
+      }
 
       @if (isEditMode()) {
         <ion-item fill="outline" shape="round">
@@ -27,6 +30,9 @@
             labelPlacement="floating"
           ></ion-input>
         </ion-item>
+        @if (errorFor('serviceType'); as msg) {
+          <ion-text color="danger" class="field-error">{{ msg }}</ion-text>
+        }
       }
 
       <ion-item fill="outline" shape="round">
@@ -38,6 +44,9 @@
           labelPlacement="floating"
         ></ion-input>
       </ion-item>
+      @if (errorFor('mileage'); as msg) {
+        <ion-text color="danger" class="field-error">{{ msg }}</ion-text>
+      }
 
       <ion-item fill="outline" shape="round">
         <ion-textarea

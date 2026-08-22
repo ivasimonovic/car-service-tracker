@@ -1,3 +1,10 @@
+.loading-state {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 70vh;
+}
+
 .empty-state {
   display: flex;
   flex-direction: column;

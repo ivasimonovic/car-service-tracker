@@ -13,7 +13,13 @@ import {
 } from '@ionic/angular';
 import { addIcons } from 'ionicons';
 import { carSportOutline } from 'ionicons/icons';
+import { firstFieldError } from '../../shared/form-errors';
 import { AuthService } from '../auth.service';
+
+const FIELD_MESSAGES: Record<string, Record<string, string>> = {
+  email: { required: 'Email je obavezan.', email: 'Unesite ispravnu email adresu.' },
+  password: { required: 'Lozinka je obavezna.', minlength: 'Lozinka mora imati bar 6 karaktera.' },
+};
 
 @Component({
   selector: 'app-login',
@@ -47,6 +53,11 @@ export class LoginPage {
 
   constructor() {
     addIcons({ carSportOutline });
+  }
+
+  errorFor(field: string): string | null {
+    const key = firstFieldError(this.form.get(field));
+    return key ? (FIELD_MESSAGES[field]?.[key] ?? 'Neispravna vrednost.') : null;
   }
 
   async onSubmit(): Promise<void> {

@@ -13,7 +13,11 @@
   @if (loadError()) {
     <ion-text color="danger" class="load-error">{{ loadError() }}</ion-text>
   }
-  @if (vehicles().length === 0) {
+  @if (isLoading()) {
+    <div class="loading-state">
+      <ion-spinner name="crescent"></ion-spinner>
+    </div>
+  } @else if (vehicles().length === 0) {
     <div class="empty-state">
       <ion-icon name="car-sport-outline"></ion-icon>
       <h2>Nemate dodato vozilo.</h2>

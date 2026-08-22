@@ -21,7 +21,14 @@ import {
 import { ServiceItemCatalogService } from '../../core/service-item-catalog.service';
 import { ServiceItemCatalogEntry } from '../../models/service-item-catalog.model';
 import { ServiceItem, ServiceItemInput, ServiceRecordInput } from '../../models/service-record.model';
+import { firstFieldError } from '../../shared/form-errors';
 import { ServiceRecordService } from '../service-record.service';
+
+const FIELD_MESSAGES: Record<string, Record<string, string>> = {
+  date: { required: 'Datum je obavezan.' },
+  mileage: { required: 'Kilometraža je obavezna.', pattern: 'Unesite ispravnu kilometražu (samo brojevi).' },
+  serviceType: { required: 'Naziv servisa je obavezan.', minlength: 'Unesite bar 2 karaktera.' },
+};
 
 interface CatalogSelection {
   entry: ServiceItemCatalogEntry;
@@ -132,6 +139,11 @@ export class ServiceRecordFormPage implements OnInit {
   updateItemPrice(index: number, price: string | number | null | undefined): void {
     const value = String(price ?? '');
     this.catalogSelections.update((items) => items.map((item, i) => (i === index ? { ...item, price: value } : item)));
+  }
+
+  errorFor(field: string): string | null {
+    const key = firstFieldError(this.form.get(field));
+    return key ? (FIELD_MESSAGES[field]?.[key] ?? 'Neispravna vrednost.') : null;
   }
 
   async onSubmit(): Promise<void> {

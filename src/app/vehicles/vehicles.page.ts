@@ -16,6 +16,7 @@ import {
   IonItemSliding,
   IonLabel,
   IonList,
+  IonSpinner,
   IonText,
   IonTitle,
   IonToolbar,
@@ -58,6 +59,7 @@ import { VehicleService } from './vehicle.service';
     IonFab,
     IonFabButton,
     IonText,
+    IonSpinner,
   ],
 })
 export class VehiclesPage implements ViewWillEnter, ViewWillLeave {
@@ -70,6 +72,7 @@ export class VehiclesPage implements ViewWillEnter, ViewWillLeave {
 
   readonly currentUser = this.authService.currentUser;
   readonly vehicles = signal<Vehicle[]>([]);
+  readonly isLoading = signal(true);
   readonly loadError = signal<string | null>(null);
 
   constructor() {
@@ -80,11 +83,16 @@ export class VehiclesPage implements ViewWillEnter, ViewWillLeave {
    *  listu, pa se pretplata na uživo podatke osvežava ovde umesto u ngOnInit. */
   ionViewWillEnter(): void {
     this.loadError.set(null);
+    this.isLoading.set(true);
     this.vehiclesSubscription = this.vehicleService.getVehicles$().subscribe({
-      next: (vehicles) => this.vehicles.set(vehicles),
+      next: (vehicles) => {
+        this.vehicles.set(vehicles);
+        this.isLoading.set(false);
+      },
       error: (error) => {
         console.error('Greška pri učitavanju vozila', error);
         this.loadError.set('Greška pri učitavanju vozila. Proverite internet konekciju.');
+        this.isLoading.set(false);
       },
     });
   }
