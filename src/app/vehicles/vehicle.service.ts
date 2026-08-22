@@ -69,6 +69,17 @@ export class VehicleService {
     return snapshot.exists() ? toVehicle(snapshot.id, snapshot.data()) : null;
   }
 
+  /** Jedno vozilo, uživo (real-time) - za Dashboard ekran. */
+  getVehicleById$(id: string): Observable<Vehicle | null> {
+    return new Observable<Vehicle | null>((subscriber) =>
+      onSnapshot(
+        doc(firestore, VEHICLES_COLLECTION, id),
+        (snap) => subscriber.next(snap.exists() ? toVehicle(snap.id, snap.data()) : null),
+        (error) => subscriber.error(error),
+      ),
+    );
+  }
+
   async addVehicle(input: VehicleInput): Promise<string> {
     const userId = this.authService.currentUser?.uid;
     if (!userId) throw new Error('Korisnik nije prijavljen.');
@@ -91,5 +102,12 @@ export class VehicleService {
 
   async deleteVehicle(id: string): Promise<void> {
     await deleteDoc(doc(firestore, VEHICLES_COLLECTION, id));
+  }
+
+  async updateMileage(id: string, mileage: number): Promise<void> {
+    await updateDoc(doc(firestore, VEHICLES_COLLECTION, id), {
+      currentMileage: mileage,
+      updatedAt: serverTimestamp(),
+    });
   }
 }

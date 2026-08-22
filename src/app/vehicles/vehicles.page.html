@@ -26,7 +26,7 @@
     <ion-list>
       @for (vehicle of vehicles(); track vehicle.id) {
         <ion-item-sliding #slidingItem>
-          <ion-item [routerLink]="['/vehicles', vehicle.id, 'edit']" detail="true">
+          <ion-item [routerLink]="['/vehicles', vehicle.id]" detail="true">
             <ion-icon name="car-sport-outline" slot="start"></ion-icon>
             <ion-label>
               <h2>{{ vehicle.brand }} {{ vehicle.model }} ({{ vehicle.year }})</h2>

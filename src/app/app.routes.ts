@@ -36,6 +36,28 @@ export const routes: Routes = [
     canActivate: [authGuard],
   },
   {
+    path: 'vehicles/:vehicleId/services/new',
+    loadComponent: () =>
+      import('./service-records/service-record-form/service-record-form.page').then(
+        (m) => m.ServiceRecordFormPage,
+      ),
+    canActivate: [authGuard],
+  },
+  {
+    path: 'vehicles/:vehicleId/services/:serviceId/edit',
+    loadComponent: () =>
+      import('./service-records/service-record-form/service-record-form.page').then(
+        (m) => m.ServiceRecordFormPage,
+      ),
+    canActivate: [authGuard],
+  },
+  {
+    path: 'vehicles/:id',
+    loadComponent: () =>
+      import('./vehicles/vehicle-dashboard/vehicle-dashboard.page').then((m) => m.VehicleDashboardPage),
+    canActivate: [authGuard],
+  },
+  {
     path: '**',
     redirectTo: 'vehicles',
   },

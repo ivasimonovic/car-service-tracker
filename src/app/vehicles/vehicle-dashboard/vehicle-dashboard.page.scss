@@ -1,0 +1,99 @@
+.loading-state {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+}
+
+.load-error {
+  display: block;
+  text-align: center;
+  font-size: 13px;
+  padding: 12px 24px 0;
+}
+
+.vehicle-summary {
+  padding: 24px 24px 8px;
+  text-align: center;
+
+  h1 {
+    font-size: 20px;
+    margin: 0 0 4px;
+  }
+
+  p {
+    color: var(--ion-color-medium);
+    margin: 0 0 16px;
+    font-size: 13px;
+  }
+}
+
+.mileage-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--ion-color-light, #f4f5f8);
+  border-radius: 14px;
+  padding: 12px 16px;
+
+  ion-icon:first-child {
+    font-size: 28px;
+    color: var(--ion-color-primary);
+  }
+
+  .mileage-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    text-align: left;
+
+    .value {
+      font-size: 18px;
+      font-weight: 700;
+    }
+
+    .label {
+      font-size: 12px;
+      color: var(--ion-color-medium);
+    }
+  }
+}
+
+.section-title {
+  font-size: 15px;
+  font-weight: 700;
+  margin: 20px 16px 4px;
+}
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 32px 24px;
+
+  ion-icon {
+    font-size: 48px;
+    color: var(--ion-color-medium);
+    margin-bottom: 12px;
+  }
+
+  p {
+    color: var(--ion-color-medium);
+    margin: 0;
+  }
+}
+
+.price {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+}
+
+ion-item p ion-icon {
+  font-size: 14px;
+  vertical-align: middle;
+  margin: 0 2px 0 0;
+}

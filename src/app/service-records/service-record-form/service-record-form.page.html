@@ -1,0 +1,79 @@
+<ion-header [translucent]="true">
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-back-button [defaultHref]="'/vehicles/' + vehicleId()"></ion-back-button>
+    </ion-buttons>
+    <ion-title>{{ isEditMode() ? 'Izmeni servis' : 'Novi servis' }}</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true" class="service-form-content">
+  @if (isLoading()) {
+    <div class="loading-state">
+      <ion-spinner name="crescent"></ion-spinner>
+    </div>
+  } @else {
+    <form class="service-form" [class.is-saving]="isSubmitting()" [formGroup]="form" (ngSubmit)="onSubmit()">
+      <ion-item fill="outline" shape="round">
+        <ion-input formControlName="date" type="date" label="Datum servisa" labelPlacement="floating"></ion-input>
+      </ion-item>
+
+      <ion-item fill="outline" shape="round">
+        <ion-input
+          formControlName="serviceType"
+          type="text"
+          label="Vrsta servisa"
+          labelPlacement="floating"
+          placeholder="npr. Redovan servis"
+        ></ion-input>
+      </ion-item>
+
+      <ion-item fill="outline" shape="round">
+        <ion-input
+          formControlName="mileage"
+          type="number"
+          inputmode="numeric"
+          label="Kilometraža na servisu (km)"
+          labelPlacement="floating"
+        ></ion-input>
+      </ion-item>
+
+      <ion-item fill="outline" shape="round">
+        <ion-input
+          formControlName="totalPrice"
+          type="number"
+          inputmode="decimal"
+          label="Cena (RSD)"
+          labelPlacement="floating"
+        ></ion-input>
+      </ion-item>
+
+      <ion-item fill="outline" shape="round">
+        <ion-textarea
+          formControlName="note"
+          label="Napomena (opciono)"
+          labelPlacement="floating"
+          autoGrow="true"
+        ></ion-textarea>
+      </ion-item>
+
+      @if (errorMessage()) {
+        <ion-text color="danger" class="form-error">{{ errorMessage() }}</ion-text>
+      }
+
+      <ion-button expand="block" shape="round" type="submit" [disabled]="isSubmitting()">
+        @if (isSubmitting()) {
+          <ion-spinner name="crescent" slot="start"></ion-spinner>
+        }
+        {{ isEditMode() ? 'Sačuvaj izmene' : 'Dodaj servis' }}
+      </ion-button>
+
+      @if (isSubmitting()) {
+        <div class="saving-overlay">
+          <ion-spinner name="crescent"></ion-spinner>
+          <p>Čuvanje servisa...</p>
+        </div>
+      }
+    </form>
+  }
+</ion-content>

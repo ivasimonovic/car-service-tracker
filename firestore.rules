@@ -14,8 +14,10 @@ service cloud.firestore {
       allow create: if request.auth != null && request.auth.uid == request.resource.data.userId;
     }
 
-    // Napomena: kolekcija serviceRecords (sa pravilima po userId vlasništvu)
-    // dodaje se u narednim sprintovima. Do tada Firestore po difoltu odbija
-    // pristup svemu što nije eksplicitno dozvoljeno gore.
+    // Istorija servisa - korisnik sme da čita/menja/briše samo servise koje je sam kreirao.
+    match /serviceRecords/{recordId} {
+      allow read, update, delete: if request.auth != null && request.auth.uid == resource.data.userId;
+      allow create: if request.auth != null && request.auth.uid == request.resource.data.userId;
+    }
   }
 }

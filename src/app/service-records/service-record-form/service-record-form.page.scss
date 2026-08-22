@@ -1,0 +1,54 @@
+.service-form-content {
+  --background: var(--ion-color-light, #f4f5f8);
+}
+
+.loading-state {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+}
+
+.service-form {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  max-width: 420px;
+  margin: 0 auto;
+  padding: 24px;
+
+  &.is-saving > *:not(.saving-overlay) {
+    opacity: 0.4;
+    pointer-events: none;
+  }
+}
+
+.saving-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  background: rgba(var(--ion-background-color-rgb, 255, 255, 255), 0.6);
+  border-radius: 12px;
+
+  ion-spinner {
+    width: 40px;
+    height: 40px;
+  }
+
+  p {
+    margin: 0;
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--ion-color-medium);
+  }
+}
+
+.form-error {
+  font-size: 13px;
+  text-align: center;
+}

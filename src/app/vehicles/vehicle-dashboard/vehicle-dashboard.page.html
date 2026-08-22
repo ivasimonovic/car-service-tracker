@@ -1,0 +1,84 @@
+<ion-header [translucent]="true">
+  <ion-toolbar>
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/vehicles"></ion-back-button>
+    </ion-buttons>
+    <ion-title>{{ vehicle()?.brand }} {{ vehicle()?.model }}</ion-title>
+    <ion-buttons slot="end">
+      <ion-button [routerLink]="['/vehicles', id(), 'edit']">
+        <ion-icon slot="icon-only" name="create-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true" class="dashboard-content">
+  @if (loadError()) {
+    <ion-text color="danger" class="load-error">{{ loadError() }}</ion-text>
+  }
+
+  @if (!vehicle()) {
+    <div class="loading-state">
+      <ion-spinner name="crescent"></ion-spinner>
+    </div>
+  } @else {
+    <div class="vehicle-summary">
+      <h1>{{ vehicle()!.brand }} {{ vehicle()!.model }} ({{ vehicle()!.year }})</h1>
+      <p>{{ vehicle()!.registrationNumber }} &middot; {{ vehicle()!.engine }} &middot; {{ vehicle()!.fuelType }}</p>
+
+      <div class="mileage-card">
+        <ion-icon name="speedometer-outline"></ion-icon>
+        <div class="mileage-info">
+          <span class="value">{{ vehicle()!.currentMileage | number }} km</span>
+          <span class="label">Trenutna kilometraža</span>
+        </div>
+        <ion-button fill="clear" size="small" (click)="onUpdateMileage()">
+          <ion-icon slot="icon-only" name="pencil-outline"></ion-icon>
+        </ion-button>
+      </div>
+    </div>
+
+    <h2 class="section-title">Istorija servisa</h2>
+
+    @if (serviceRecords().length === 0) {
+      <div class="empty-state">
+        <ion-icon name="build-outline"></ion-icon>
+        <p>Nema evidentiranih servisa za ovo vozilo.</p>
+      </div>
+    } @else {
+      <ion-list>
+        @for (record of serviceRecords(); track record.id) {
+          <ion-item-sliding #slidingItem>
+            <ion-item [routerLink]="['/vehicles', id(), 'services', record.id, 'edit']" detail="true">
+              <ion-icon name="build-outline" slot="start"></ion-icon>
+              <ion-label>
+                <h2>{{ record.serviceType }}</h2>
+                <p>
+                  <ion-icon name="calendar-outline"></ion-icon>
+                  {{ record.date | date: 'dd.MM.yyyy' }} &middot;
+                  <ion-icon name="speedometer-outline"></ion-icon>
+                  {{ record.mileage | number }} km
+                </p>
+                <p class="price">
+                  <ion-icon name="cash-outline"></ion-icon>
+                  {{ record.totalPrice | number }} RSD
+                </p>
+              </ion-label>
+            </ion-item>
+            <ion-item-options side="end">
+              <ion-item-option color="danger" (click)="onDeleteRecord(record.id, slidingItem)">
+                <ion-icon slot="icon-only" name="trash-outline"></ion-icon>
+              </ion-item-option>
+            </ion-item-options>
+          </ion-item-sliding>
+        }
+      </ion-list>
+    }
+  }
+
+  <ion-fab vertical="bottom" horizontal="end" slot="fixed">
+    <ion-fab-button [routerLink]="['/vehicles', id(), 'services', 'new']">
+      <ion-icon name="add-outline"></ion-icon>
+    </ion-fab-button>
+  </ion-fab>
+</ion-content>
