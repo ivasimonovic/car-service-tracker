@@ -1,5 +1,5 @@
 import { DatePipe, DecimalPipe } from '@angular/common';
-import { Component, inject, input, signal } from '@angular/core';
+import { Component, effect, inject, input, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import {
   AlertController,
@@ -36,8 +36,10 @@ import {
   trashOutline,
 } from 'ionicons/icons';
 import { Subscription } from 'rxjs';
+import { MaintenanceStatus } from '../../models/maintenance-status.model';
 import { ServiceRecord } from '../../models/service-record.model';
 import { Vehicle } from '../../models/vehicle.model';
+import { MaintenanceService } from '../../service-records/maintenance.service';
 import { ServiceRecordService } from '../../service-records/service-record.service';
 import { VehicleService } from '../vehicle.service';
 
@@ -72,12 +74,14 @@ import { VehicleService } from '../vehicle.service';
 export class VehicleDashboardPage implements ViewWillEnter, ViewWillLeave {
   private readonly vehicleService = inject(VehicleService);
   private readonly serviceRecordService = inject(ServiceRecordService);
+  private readonly maintenanceService = inject(MaintenanceService);
   private readonly alertController = inject(AlertController);
 
   readonly id = input.required<string>();
 
   readonly vehicle = signal<Vehicle | null>(null);
   readonly serviceRecords = signal<ServiceRecord[]>([]);
+  readonly maintenanceStatuses = signal<MaintenanceStatus[]>([]);
   readonly loadError = signal<string | null>(null);
 
   private vehicleSubscription: Subscription | null = null;
@@ -93,6 +97,21 @@ export class VehicleDashboardPage implements ViewWillEnter, ViewWillLeave {
       pencilOutline,
       speedometerOutline,
       trashOutline,
+    });
+
+    // Preračunava zeleno/žuto/crveno stanje održavanja kad god se učita vozilo ili se
+    // istorija servisa promeni (nova/obrisana stavka, live update kilometraže).
+    effect(() => {
+      const vehicle = this.vehicle();
+      const records = this.serviceRecords();
+      if (!vehicle) {
+        this.maintenanceStatuses.set([]);
+        return;
+      }
+      void this.maintenanceService
+        .getMaintenanceStatus(vehicle.currentMileage, records)
+        .then((statuses) => this.maintenanceStatuses.set(statuses))
+        .catch((error) => console.error('Greška pri računanju stanja održavanja', error));
     });
   }
 

@@ -38,6 +38,27 @@
       </div>
     </div>
 
+    @if (maintenanceStatuses().length > 0) {
+      <h2 class="section-title">Stanje održavanja</h2>
+      <ul class="maintenance-list">
+        @for (status of maintenanceStatuses(); track status.itemName) {
+          <li class="maintenance-item level-{{ status.level }}">
+            <span class="dot"></span>
+            <div class="info">
+              <span class="name">{{ status.itemName }}</span>
+              <span class="detail">
+                @if (status.level === 'red') {
+                  Dospelo pre {{ -status.remainingKm | number }} km
+                } @else {
+                  Sledeća zamena za {{ status.remainingKm | number }} km
+                }
+              </span>
+            </div>
+          </li>
+        }
+      </ul>
+    }
+
     <h2 class="section-title">Istorija servisa</h2>
 
     @if (serviceRecords().length === 0) {
