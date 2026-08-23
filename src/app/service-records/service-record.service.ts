@@ -55,9 +55,22 @@ export class ServiceRecordService {
   /** Istorija servisa za jedno vozilo, uživo (real-time). */
   getServiceRecords$(vehicleId: string): Observable<ServiceRecord[]> {
     return new Observable<ServiceRecord[]>((subscriber) => {
+      const userId = this.authService.currentUser?.uid;
+      if (!userId) {
+        subscriber.next([]);
+        subscriber.complete();
+        return;
+      }
+
+      // Pravilo za serviceRecords proverava resource.data.userId, pa upit MORA
+      // eksplicitno da filtrira po userId - inače Firestore odbija celu listu sa
+      // permission-denied jer ne može da garantuje, samo iz oblika upita, da će
+      // vratiti isključivo dokumente trenutnog korisnika (bez obzira što bi u praksi
+      // svi rezultati za dato vehicleId realno pripadali njemu).
       const recordsQuery = query(
         collection(firestore, SERVICE_RECORDS_COLLECTION),
         where('vehicleId', '==', vehicleId),
+        where('userId', '==', userId),
         orderBy('date', 'desc'),
       );
 

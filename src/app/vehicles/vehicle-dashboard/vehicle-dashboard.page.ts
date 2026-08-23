@@ -125,7 +125,7 @@ export class VehicleDashboardPage implements ViewWillEnter, ViewWillLeave {
       next: (vehicle) => this.vehicle.set(vehicle),
       error: (error) => {
         console.error('Greška pri učitavanju vozila', error);
-        this.loadError.set('Greška pri učitavanju vozila. Proverite internet konekciju.');
+        this.loadError.set(`Greška pri učitavanju vozila (${error.code ?? error.message}).`);
       },
     });
 
@@ -136,7 +136,7 @@ export class VehicleDashboardPage implements ViewWillEnter, ViewWillLeave {
       },
       error: (error) => {
         console.error('Greška pri učitavanju istorije servisa', error);
-        this.loadError.set('Greška pri učitavanju istorije servisa. Proverite internet konekciju.');
+        this.loadError.set(`Greška pri učitavanju istorije servisa (${error.code ?? error.message}).`);
         this.recordsLoaded.set(true);
       },
     });

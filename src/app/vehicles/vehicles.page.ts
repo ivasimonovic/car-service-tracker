@@ -91,7 +91,7 @@ export class VehiclesPage implements ViewWillEnter, ViewWillLeave {
       },
       error: (error) => {
         console.error('Greška pri učitavanju vozila', error);
-        this.loadError.set('Greška pri učitavanju vozila. Proverite internet konekciju.');
+        this.loadError.set(`Greška pri učitavanju vozila (${error.code ?? error.message}).`);
         this.isLoading.set(false);
       },
     });
