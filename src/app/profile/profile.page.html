@@ -1,0 +1,23 @@
+<ion-header class="ion-no-border">
+  <ion-toolbar>
+    <ion-title>Profil</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true" class="profile-content">
+  <div class="profile-card">
+    <div class="avatar">{{ initials }}</div>
+    <h2>{{ currentUser?.displayName || 'Korisnik' }}</h2>
+    <p class="email">
+      <ion-icon name="mail-outline"></ion-icon>
+      {{ currentUser?.email }}
+    </p>
+  </div>
+
+  <ion-button expand="block" fill="outline" color="danger" shape="round" class="logout-button" (click)="onLogOut()">
+    <ion-icon slot="start" name="log-out-outline"></ion-icon>
+    Odjavi se
+  </ion-button>
+
+  <p class="app-footer">Car Service Tracker</p>
+</ion-content>

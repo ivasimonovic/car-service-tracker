@@ -6,6 +6,7 @@ import {
   deleteDoc,
   doc,
   getDoc,
+  getDocs,
   onSnapshot,
   orderBy,
   query,
@@ -62,6 +63,15 @@ export class VehicleService {
         (error) => subscriber.error(error),
       );
     });
+  }
+
+  /** Sva vozila trenutnog korisnika, jednokratno (za statistiku, bez uživo pretplate). */
+  async getVehiclesOnce(): Promise<Vehicle[]> {
+    const userId = this.authService.currentUser?.uid;
+    if (!userId) return [];
+
+    const snapshot = await getDocs(query(collection(firestore, VEHICLES_COLLECTION), where('userId', '==', userId)));
+    return snapshot.docs.map((docSnap) => toVehicle(docSnap.id, docSnap.data()));
   }
 
   async getVehicle(id: string): Promise<Vehicle | null> {

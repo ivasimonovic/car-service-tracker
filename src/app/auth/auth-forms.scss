@@ -1,5 +1,5 @@
 .auth-content {
-  --background: var(--ion-color-light, #f4f5f8);
+  --background: var(--ion-color-step-50, #f4f5f8);
 }
 
 .auth-wrapper {
@@ -16,14 +16,26 @@
   text-align: center;
   margin-bottom: 32px;
 
-  ion-icon {
-    font-size: 56px;
-    color: var(--ion-color-primary);
+  .brand-badge {
+    width: 72px;
+    height: 72px;
+    margin: 0 auto 14px;
+    border-radius: 22px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, var(--ion-color-primary), var(--ion-color-primary-shade));
+    box-shadow: var(--app-shadow-md);
+
+    ion-icon {
+      font-size: 34px;
+      color: var(--ion-color-primary-contrast);
+    }
   }
 
   h1 {
     font-size: 24px;
-    font-weight: 700;
+    font-weight: 800;
     margin: 8px 0 4px;
   }
 

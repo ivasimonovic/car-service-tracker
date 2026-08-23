@@ -1,11 +1,6 @@
-<ion-header [translucent]="true">
+<ion-header class="ion-no-border">
   <ion-toolbar>
-    <ion-title>Vaša vozila</ion-title>
-    <ion-buttons slot="end">
-      <ion-button (click)="onLogOut()">
-        <ion-icon slot="icon-only" name="log-out-outline"></ion-icon>
-      </ion-button>
-    </ion-buttons>
+    <ion-title>{{ greeting }}</ion-title>
   </ion-toolbar>
 </ion-header>
 
@@ -22,33 +17,28 @@
       <ion-icon name="car-sport-outline"></ion-icon>
       <h2>Nemate dodato vozilo.</h2>
       <p>Dodajte svoje prvo vozilo da biste počeli praćenje servisa.</p>
-      @if (currentUser) {
-        <p class="signed-in-as">Prijavljeni ste kao {{ currentUser.displayName || currentUser.email }}</p>
-      }
     </div>
   } @else {
-    <ion-list>
+    <div class="vehicle-cards">
       @for (vehicle of vehicles(); track vehicle.id) {
-        <ion-item-sliding #slidingItem>
-          <ion-item [routerLink]="['/vehicles', vehicle.id]" detail="true">
-            <ion-icon name="car-sport-outline" slot="start"></ion-icon>
-            <ion-label>
-              <h2>{{ vehicle.brand }} {{ vehicle.model }} ({{ vehicle.year }})</h2>
-              <p>{{ vehicle.registrationNumber }} &middot; {{ vehicle.engine }}</p>
-              <p class="mileage">
-                <ion-icon name="speedometer-outline"></ion-icon>
-                {{ vehicle.currentMileage | number }} km
-              </p>
-            </ion-label>
-          </ion-item>
-          <ion-item-options side="end">
-            <ion-item-option color="danger" (click)="onDelete(vehicle.id, slidingItem)">
-              <ion-icon slot="icon-only" name="trash-outline"></ion-icon>
-            </ion-item-option>
-          </ion-item-options>
-        </ion-item-sliding>
+        <a class="vehicle-card" [routerLink]="['/vehicles', vehicle.id]">
+          <div class="card-top">
+            <span class="icon-badge">
+              <ion-icon name="car-sport-outline"></ion-icon>
+            </span>
+            <button type="button" class="delete-button" (click)="onDelete(vehicle.id, $event)">
+              <ion-icon name="trash-outline"></ion-icon>
+            </button>
+          </div>
+          <h2>{{ vehicle.brand }} {{ vehicle.model }}</h2>
+          <p class="sub">{{ vehicle.year }} &middot; {{ vehicle.registrationNumber }}</p>
+          <div class="mileage">
+            <ion-icon name="speedometer-outline"></ion-icon>
+            <span>{{ vehicle.currentMileage | number }} km</span>
+          </div>
+        </a>
       }
-    </ion-list>
+    </div>
   }
 
   <ion-fab vertical="bottom" horizontal="end" slot="fixed">

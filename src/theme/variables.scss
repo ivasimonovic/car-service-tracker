@@ -1,2 +1,65 @@
-// For information on how to create your own theme, please refer to:
-// https://ionicframework.com/docs/theming/
+// Sopstvena paleta boja (automobilska/garažna tema: ćilibar akcenat na tamnom
+// škriljcu) umesto podrazumevane Ionic plave, plus zaobljeniji, kartičniji
+// dizajn definisan preko --app-* promenljivih koje koriste svi ekrani.
+
+:root {
+  --ion-font-family: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+
+  /** primary - ćilibar/narandžasta, glavna akcentna boja aplikacije */
+  --ion-color-primary: #ff7a33;
+  --ion-color-primary-rgb: 255, 122, 51;
+  --ion-color-primary-contrast: #ffffff;
+  --ion-color-primary-contrast-rgb: 255, 255, 255;
+  --ion-color-primary-shade: #e06c2d;
+  --ion-color-primary-tint: #ff8747;
+
+  /** secondary - tamni škriljac/grafit, za header akcente i drugo dugme */
+  --ion-color-secondary: #2b3a4a;
+  --ion-color-secondary-rgb: 43, 58, 74;
+  --ion-color-secondary-contrast: #ffffff;
+  --ion-color-secondary-contrast-rgb: 255, 255, 255;
+  --ion-color-secondary-shade: #263341;
+  --ion-color-secondary-tint: #404e5c;
+
+  /** tertiary - prigušeni teal, za retke dodatne akcente */
+  --ion-color-tertiary: #2f9e8f;
+  --ion-color-tertiary-rgb: 47, 158, 143;
+  --ion-color-tertiary-contrast: #ffffff;
+  --ion-color-tertiary-contrast-rgb: 255, 255, 255;
+  --ion-color-tertiary-shade: #298b7e;
+  --ion-color-tertiary-tint: #44a89a;
+
+  /** Zajednički tokeni za kartični izgled (koriste ih SCSS fajlovi svih ekrana). */
+  --app-radius-lg: 20px;
+  --app-radius-md: 14px;
+  --app-radius-sm: 10px;
+  --app-shadow-sm: 0 2px 10px rgba(20, 20, 30, 0.06);
+  --app-shadow-md: 0 8px 24px rgba(20, 20, 30, 0.12);
+}
+
+.ion-color-primary {
+  --ion-color-base: var(--ion-color-primary);
+  --ion-color-base-rgb: var(--ion-color-primary-rgb);
+  --ion-color-contrast: var(--ion-color-primary-contrast);
+  --ion-color-contrast-rgb: var(--ion-color-primary-contrast-rgb);
+  --ion-color-shade: var(--ion-color-primary-shade);
+  --ion-color-tint: var(--ion-color-primary-tint);
+}
+
+.ion-color-secondary {
+  --ion-color-base: var(--ion-color-secondary);
+  --ion-color-base-rgb: var(--ion-color-secondary-rgb);
+  --ion-color-contrast: var(--ion-color-secondary-contrast);
+  --ion-color-contrast-rgb: var(--ion-color-secondary-contrast-rgb);
+  --ion-color-shade: var(--ion-color-secondary-shade);
+  --ion-color-tint: var(--ion-color-secondary-tint);
+}
+
+.ion-color-tertiary {
+  --ion-color-base: var(--ion-color-tertiary);
+  --ion-color-base-rgb: var(--ion-color-tertiary-rgb);
+  --ion-color-contrast: var(--ion-color-tertiary-contrast);
+  --ion-color-contrast-rgb: var(--ion-color-tertiary-contrast-rgb);
+  --ion-color-shade: var(--ion-color-tertiary-shade);
+  --ion-color-tint: var(--ion-color-tertiary-tint);
+}

@@ -5,7 +5,7 @@ import { guestGuard } from './auth/guest.guard';
 export const routes: Routes = [
   {
     path: '',
-    redirectTo: 'vehicles',
+    redirectTo: 'tabs',
     pathMatch: 'full',
   },
   {
@@ -19,9 +19,28 @@ export const routes: Routes = [
     canActivate: [guestGuard],
   },
   {
-    path: 'vehicles',
-    loadComponent: () => import('./vehicles/vehicles.page').then((m) => m.VehiclesPage),
+    path: 'tabs',
+    loadComponent: () => import('./tabs/tabs.page').then((m) => m.TabsPage),
     canActivate: [authGuard],
+    children: [
+      {
+        path: 'vehicles',
+        loadComponent: () => import('./vehicles/vehicles.page').then((m) => m.VehiclesPage),
+      },
+      {
+        path: 'stats',
+        loadComponent: () => import('./stats/stats.page').then((m) => m.StatsPage),
+      },
+      {
+        path: 'profile',
+        loadComponent: () => import('./profile/profile.page').then((m) => m.ProfilePage),
+      },
+      {
+        path: '',
+        redirectTo: 'vehicles',
+        pathMatch: 'full',
+      },
+    ],
   },
   {
     path: 'vehicles/new',
@@ -59,6 +78,6 @@ export const routes: Routes = [
   },
   {
     path: '**',
-    redirectTo: 'vehicles',
+    redirectTo: 'tabs',
   },
 ];

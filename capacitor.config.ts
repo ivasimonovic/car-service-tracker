@@ -2,7 +2,7 @@ import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
   appId: 'rs.ivamr.carservicetracker',
-  appName: 'car-service-tracker',
+  appName: 'Car Service Tracker',
   webDir: 'www'
 };
 

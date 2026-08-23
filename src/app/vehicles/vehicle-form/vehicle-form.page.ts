@@ -144,7 +144,7 @@ export class VehicleFormPage implements OnInit {
       } else {
         await this.vehicleService.addVehicle(value);
       }
-      await this.router.navigateByUrl('/vehicles');
+      await this.router.navigateByUrl('/tabs/vehicles');
     } catch {
       this.errorMessage.set('Došlo je do greške. Pokušajte ponovo.');
     } finally {

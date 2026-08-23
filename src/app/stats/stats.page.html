@@ -1,0 +1,77 @@
+<ion-header class="ion-no-border">
+  <ion-toolbar>
+    <ion-title>Statistika</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true" class="stats-content">
+  @if (isLoading()) {
+    <div class="loading-state">
+      <ion-spinner name="crescent"></ion-spinner>
+    </div>
+  } @else if (loadError()) {
+    <ion-text color="danger" class="load-error">{{ loadError() }}</ion-text>
+  } @else if (overview(); as ov) {
+    @if (ov.vehicleSpending.length === 0) {
+      <div class="empty-state">
+        <ion-icon name="car-sport-outline"></ion-icon>
+        <h2>Još nema podataka</h2>
+        <p>Dodajte vozilo i evidentirajte servis da bi se ovde prikazala statistika.</p>
+      </div>
+    } @else {
+      <div class="summary-row">
+        <div class="summary-card">
+          <ion-icon name="cash-outline"></ion-icon>
+          <span class="value">{{ ov.totalSpent | number }} RSD</span>
+          <span class="label">Ukupno potrošeno</span>
+        </div>
+        <div class="summary-card">
+          <ion-icon name="construct-outline"></ion-icon>
+          <span class="value">{{ ov.totalServices }}</span>
+          <span class="label">Evidentiranih servisa</span>
+        </div>
+      </div>
+
+      <h2 class="section-title">Troškovi po vozilu</h2>
+      <div class="spending-list">
+        @for (entry of ov.vehicleSpending; track entry.vehicle.id) {
+          <a class="spending-item" [routerLink]="['/vehicles', entry.vehicle.id]">
+            <div class="spending-info">
+              <span class="name">{{ entry.vehicle.brand }} {{ entry.vehicle.model }}</span>
+              <span class="amount">{{ entry.totalSpent | number }} RSD</span>
+            </div>
+            <div class="bar-track">
+              <div class="bar-fill" [style.width.%]="(entry.totalSpent / maxSpent(ov)) * 100"></div>
+            </div>
+          </a>
+        }
+      </div>
+
+      <h2 class="section-title">Uskoro na servisu</h2>
+      @if (ov.upcoming.length === 0) {
+        <p class="all-good">
+          <ion-icon name="checkmark-circle-outline"></ion-icon>
+          Sva vozila su ažurna, nema hitnih servisa.
+        </p>
+      } @else {
+        <ul class="upcoming-list">
+          @for (entry of ov.upcoming; track entry.vehicle.id + entry.status.itemName) {
+            <li class="upcoming-item level-{{ entry.status.level }}" [routerLink]="['/vehicles', entry.vehicle.id]">
+              <span class="dot"></span>
+              <div class="info">
+                <span class="name">{{ entry.status.itemName }} &middot; {{ entry.vehicle.brand }} {{ entry.vehicle.model }}</span>
+                <span class="detail">
+                  @if (entry.status.level === 'red') {
+                    Dospelo pre {{ -entry.status.remainingKm | number }} km
+                  } @else {
+                    Za {{ entry.status.remainingKm | number }} km
+                  }
+                </span>
+              </div>
+            </li>
+          }
+        </ul>
+      }
+    }
+  }
+</ion-content>

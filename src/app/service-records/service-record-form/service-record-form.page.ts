@@ -22,6 +22,7 @@ import { ServiceItemCatalogService } from '../../core/service-item-catalog.servi
 import { ServiceItemCatalogEntry } from '../../models/service-item-catalog.model';
 import { ServiceItem, ServiceItemInput, ServiceRecordInput } from '../../models/service-record.model';
 import { firstFieldError } from '../../shared/form-errors';
+import { VehicleService } from '../../vehicles/vehicle.service';
 import { ServiceRecordService } from '../service-record.service';
 
 const FIELD_MESSAGES: Record<string, Record<string, string>> = {
@@ -63,6 +64,7 @@ export class ServiceRecordFormPage implements OnInit {
   private readonly fb = inject(FormBuilder);
   private readonly serviceRecordService = inject(ServiceRecordService);
   private readonly serviceItemCatalogService = inject(ServiceItemCatalogService);
+  private readonly vehicleService = inject(VehicleService);
   private readonly router = inject(Router);
 
   readonly vehicleId = input.required<string>();
@@ -99,11 +101,19 @@ export class ServiceRecordFormPage implements OnInit {
       if (serviceId) {
         await this.loadExistingRecord(serviceId);
       } else {
-        const catalog = await this.serviceItemCatalogService.getCatalog();
+        const [catalog, vehicle] = await Promise.all([
+          this.serviceItemCatalogService.getCatalog(),
+          this.vehicleService.getVehicle(this.vehicleId()),
+        ]);
         this.catalogSelections.set(catalog.map((entry) => ({ entry, selected: false, price: '' })));
         // Naslov servisa se pri kreiranju automatski izvodi iz izabranih stavki (vidi onSubmit),
         // pa polje ne treba da bude vidljivo korisniku - ovde samo zadovoljava validator.
-        this.form.patchValue({ serviceType: 'Servis' });
+        // Kilometraža se unapred popunjava trenutnom kilometražom vozila (korisnik je i dalje
+        // može promeniti) - ako unese veću, addCompleteService automatski podiže vozilo na nju.
+        this.form.patchValue({
+          serviceType: 'Servis',
+          mileage: vehicle ? String(vehicle.currentMileage) : '0',
+        });
       }
     } catch {
       this.errorMessage.set('Greška pri učitavanju podataka.');

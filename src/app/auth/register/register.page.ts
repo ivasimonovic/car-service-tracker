@@ -85,7 +85,7 @@ export class RegisterPage {
 
     try {
       await this.authService.register(email, password, displayName);
-      await this.router.navigateByUrl('/vehicles');
+      await this.router.navigateByUrl('/tabs/vehicles');
     } catch (error) {
       this.errorMessage.set(this.authService.mapAuthError(error));
     } finally {

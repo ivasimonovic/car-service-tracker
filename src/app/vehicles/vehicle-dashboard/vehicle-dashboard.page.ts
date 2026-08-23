@@ -112,7 +112,10 @@ export class VehicleDashboardPage implements ViewWillEnter, ViewWillLeave {
       void this.maintenanceService
         .getMaintenanceStatus(vehicle.currentMileage, records)
         .then((statuses) => this.maintenanceStatuses.set(statuses))
-        .catch((error) => console.error('Greška pri računanju stanja održavanja', error));
+        .catch((error) => {
+          console.error('Greška pri računanju stanja održavanja', error);
+          this.loadError.set(`Greška pri računanju stanja održavanja (${error.code ?? error.message}).`);
+        });
     });
   }
 

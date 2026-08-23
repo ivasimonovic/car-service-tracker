@@ -83,6 +83,17 @@ export class ServiceRecordService {
     });
   }
 
+  /** Svi servisi trenutnog korisnika (svih vozila), jednokratno - za statistiku. */
+  async getServiceRecordsForUser(): Promise<ServiceRecord[]> {
+    const userId = this.authService.currentUser?.uid;
+    if (!userId) return [];
+
+    const snapshot = await getDocs(
+      query(collection(firestore, SERVICE_RECORDS_COLLECTION), where('userId', '==', userId)),
+    );
+    return snapshot.docs.map((docSnap) => toServiceRecord(docSnap.id, docSnap.data()));
+  }
+
   async getServiceRecord(id: string): Promise<ServiceRecord | null> {
     const snapshot = await getDoc(doc(firestore, SERVICE_RECORDS_COLLECTION, id));
     return snapshot.exists() ? toServiceRecord(snapshot.id, snapshot.data()) : null;
@@ -101,9 +112,16 @@ export class ServiceRecordService {
   }
 
   async getServiceItems(recordId: string): Promise<ServiceItem[]> {
-    const snapshot = await getDocs(
+    const userId = this.authService.currentUser?.uid;
+    if (!userId) return [];
+
+    // Isti razlog kao kod getServiceRecords$: pravilo za items proverava resource.data.userId,
+    // pa upit mora eksplicitno da filtrira po userId, inače Firestore odbija celu listu.
+    const itemsQuery = query(
       collection(firestore, SERVICE_RECORDS_COLLECTION, recordId, SERVICE_ITEMS_SUBCOLLECTION),
+      where('userId', '==', userId),
     );
+    const snapshot = await getDocs(itemsQuery);
     return snapshot.docs.map((docSnap) => toServiceItem(docSnap.id, docSnap.data()));
   }
 
