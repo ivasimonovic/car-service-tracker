@@ -117,16 +117,13 @@ export class ServiceRecordFormPage implements OnInit {
   }
 
   private async loadExistingRecord(serviceId: string): Promise<void> {
-    const [record, items] = await Promise.all([
-      this.serviceRecordService.getServiceRecord(serviceId),
-      this.serviceRecordService.getServiceItems(serviceId),
-    ]);
+    const record = await this.serviceRecordService.getServiceRecord(this.vehicleId(), serviceId);
     if (!record) {
       this.errorMessage.set('Servis nije pronađen.');
       return;
     }
 
-    this.existingItems.set(items);
+    this.existingItems.set(record.items);
     this.existingTotalPrice.set(record.totalPrice);
     this.form.patchValue({
       date: (record.date ?? new Date()).toISOString().slice(0, 10),
@@ -176,7 +173,7 @@ export class ServiceRecordFormPage implements OnInit {
           note: raw.note.trim(),
           totalPrice: this.existingTotalPrice(),
         };
-        await this.serviceRecordService.updateServiceRecord(serviceId, value);
+        await this.serviceRecordService.updateServiceRecord(this.vehicleId(), serviceId, value);
       } else {
         const selected = this.selectedItems();
         const items: ServiceItemInput[] = selected.map((item) => ({

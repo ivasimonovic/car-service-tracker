@@ -1,9 +1,9 @@
 import { Injectable } from '@angular/core';
-import { collection, getDocs, orderBy, query } from 'firebase/firestore';
+import { get, ref } from 'firebase/database';
 import { CarBrand } from '../models/car-brand.model';
-import { firestore } from './firebase';
+import { database } from './firebase';
 
-const VEHICLE_BRANDS_COLLECTION = 'vehicleBrands';
+const VEHICLE_BRANDS_PATH = 'vehicleBrands';
 
 @Injectable({ providedIn: 'root' })
 export class CarBrandService {
@@ -12,8 +12,11 @@ export class CarBrandService {
   async getBrands(): Promise<CarBrand[]> {
     if (this.cache) return this.cache;
 
-    const snapshot = await getDocs(query(collection(firestore, VEHICLE_BRANDS_COLLECTION), orderBy('name')));
-    this.cache = snapshot.docs.map((docSnap) => ({ id: docSnap.id, name: docSnap.data()['name'] }));
+    const snapshot = await get(ref(database, VEHICLE_BRANDS_PATH));
+    const value = (snapshot.val() ?? {}) as Record<string, { name: string }>;
+    this.cache = Object.entries(value)
+      .map(([id, data]) => ({ id, name: data.name }))
+      .sort((a, b) => a.name.localeCompare(b.name));
     return this.cache;
   }
 }

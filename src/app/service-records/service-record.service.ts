@@ -1,51 +1,41 @@
 import { Injectable, inject } from '@angular/core';
-import {
-  DocumentData,
-  Timestamp,
-  collection,
-  deleteDoc,
-  doc,
-  getDoc,
-  getDocs,
-  onSnapshot,
-  orderBy,
-  query,
-  runTransaction,
-  serverTimestamp,
-  updateDoc,
-  where,
-} from 'firebase/firestore';
+import { get, onValue, push, ref, serverTimestamp, update } from 'firebase/database';
 import { Observable } from 'rxjs';
 import { AuthService } from '../auth/auth.service';
-import { firestore } from '../core/firebase';
+import { database } from '../core/firebase';
 import { ServiceItem, ServiceItemInput, ServiceRecord, ServiceRecordInput } from '../models/service-record.model';
 
-const SERVICE_RECORDS_COLLECTION = 'serviceRecords';
-const SERVICE_ITEMS_SUBCOLLECTION = 'items';
-const VEHICLES_COLLECTION = 'vehicles';
+function toServiceItems(raw: Record<string, unknown> | undefined): ServiceItem[] {
+  if (!raw) return [];
+  return Object.entries(raw).map(([id, value]) => {
+    const data = value as Record<string, unknown>;
+    return {
+      id,
+      name: data['name'] as string,
+      price: data['price'] as number,
+      replacementIntervalKm: data['replacementIntervalKm'] as number,
+    };
+  });
+}
 
-function toServiceRecord(id: string, data: DocumentData): ServiceRecord {
+function toServiceRecord(id: string, data: Record<string, unknown>): ServiceRecord {
   return {
     id,
-    vehicleId: data['vehicleId'],
-    userId: data['userId'],
-    date: data['date']?.toDate() ?? null,
-    mileage: data['mileage'],
-    serviceType: data['serviceType'],
-    note: data['note'] ?? '',
-    totalPrice: data['totalPrice'],
-    createdAt: data['createdAt']?.toDate() ?? null,
-    updatedAt: data['updatedAt']?.toDate() ?? null,
+    vehicleId: data['vehicleId'] as string,
+    userId: data['userId'] as string,
+    date: data['date'] ? new Date(data['date'] as number) : null,
+    mileage: data['mileage'] as number,
+    serviceType: data['serviceType'] as string,
+    note: (data['note'] as string) ?? '',
+    totalPrice: data['totalPrice'] as number,
+    createdAt: data['createdAt'] ? new Date(data['createdAt'] as number) : null,
+    updatedAt: data['updatedAt'] ? new Date(data['updatedAt'] as number) : null,
+    items: toServiceItems(data['items'] as Record<string, unknown> | undefined),
   };
 }
 
-function toServiceItem(id: string, data: DocumentData): ServiceItem {
-  return {
-    id,
-    name: data['name'],
-    price: data['price'],
-    replacementIntervalKm: data['replacementIntervalKm'],
-  };
+function sortByDateDesc(records: ServiceRecord[]): ServiceRecord[] {
+  return records.slice().sort((a, b) => (b.date?.getTime() ?? 0) - (a.date?.getTime() ?? 0));
 }
 
 @Injectable({ providedIn: 'root' })
@@ -61,19 +51,18 @@ export class ServiceRecordService {
         return;
       }
 
-      const recordsQuery = query(
-        collection(firestore, SERVICE_RECORDS_COLLECTION),
-        where('vehicleId', '==', vehicleId),
-        where('userId', '==', userId),
-        orderBy('date', 'desc'),
-      );
-
-      return onSnapshot(
-        recordsQuery,
-        (snapshot) =>
-          subscriber.next(snapshot.docs.map((docSnap) => toServiceRecord(docSnap.id, docSnap.data()))),
+      const unsubscribe = onValue(
+        ref(database, `serviceRecords/${userId}/${vehicleId}`),
+        (snapshot) => {
+          const value = snapshot.val() ?? {};
+          const records = Object.entries(value).map(([id, data]) =>
+            toServiceRecord(id, data as Record<string, unknown>),
+          );
+          subscriber.next(sortByDateDesc(records));
+        },
         (error) => subscriber.error(error),
       );
+      return unsubscribe;
     });
   }
 
@@ -81,72 +70,81 @@ export class ServiceRecordService {
     const userId = this.authService.currentUser?.uid;
     if (!userId) return [];
 
-    const snapshot = await getDocs(
-      query(collection(firestore, SERVICE_RECORDS_COLLECTION), where('userId', '==', userId)),
-    );
-    return snapshot.docs.map((docSnap) => toServiceRecord(docSnap.id, docSnap.data()));
+    const snapshot = await get(ref(database, `serviceRecords/${userId}`));
+    const byVehicle = (snapshot.val() ?? {}) as Record<string, Record<string, unknown>>;
+    const records: ServiceRecord[] = [];
+    for (const vehicleRecords of Object.values(byVehicle)) {
+      for (const [id, data] of Object.entries(vehicleRecords)) {
+        records.push(toServiceRecord(id, data as Record<string, unknown>));
+      }
+    }
+    return records;
   }
 
-  async getServiceRecord(id: string): Promise<ServiceRecord | null> {
-    const snapshot = await getDoc(doc(firestore, SERVICE_RECORDS_COLLECTION, id));
-    return snapshot.exists() ? toServiceRecord(snapshot.id, snapshot.data()) : null;
+  async getServiceRecord(vehicleId: string, id: string): Promise<ServiceRecord | null> {
+    const userId = this.authService.currentUser?.uid;
+    if (!userId) return null;
+
+    const snapshot = await get(ref(database, `serviceRecords/${userId}/${vehicleId}/${id}`));
+    return snapshot.exists() ? toServiceRecord(id, snapshot.val()) : null;
   }
 
-  async updateServiceRecord(id: string, input: ServiceRecordInput): Promise<void> {
-    await updateDoc(doc(firestore, SERVICE_RECORDS_COLLECTION, id), {
+  async updateServiceRecord(vehicleId: string, id: string, input: ServiceRecordInput): Promise<void> {
+    const userId = this.authService.currentUser?.uid;
+    if (!userId) throw new Error('Korisnik nije prijavljen.');
+
+    await update(ref(database, `serviceRecords/${userId}/${vehicleId}/${id}`), {
       ...input,
-      date: Timestamp.fromDate(input.date ?? new Date()),
+      date: input.date ? input.date.getTime() : Date.now(),
       updatedAt: serverTimestamp(),
     });
   }
 
-  async deleteServiceRecord(id: string): Promise<void> {
-    await deleteDoc(doc(firestore, SERVICE_RECORDS_COLLECTION, id));
-  }
-
-  async getServiceItems(recordId: string): Promise<ServiceItem[]> {
+  async deleteServiceRecord(vehicleId: string, id: string): Promise<void> {
     const userId = this.authService.currentUser?.uid;
-    if (!userId) return [];
+    if (!userId) throw new Error('Korisnik nije prijavljen.');
 
-    const itemsQuery = query(
-      collection(firestore, SERVICE_RECORDS_COLLECTION, recordId, SERVICE_ITEMS_SUBCOLLECTION),
-      where('userId', '==', userId),
-    );
-    const snapshot = await getDocs(itemsQuery);
-    return snapshot.docs.map((docSnap) => toServiceItem(docSnap.id, docSnap.data()));
+    await update(ref(database), {
+      [`serviceRecords/${userId}/${vehicleId}/${id}`]: null,
+    });
   }
 
   async addCompleteService(input: ServiceRecordInput, items: ServiceItemInput[]): Promise<string> {
     const userId = this.authService.currentUser?.uid;
     if (!userId) throw new Error('Korisnik nije prijavljen.');
 
+    const vehicleId = input.vehicleId;
+    const vehicleSnap = await get(ref(database, `vehicles/${userId}/${vehicleId}/currentMileage`));
+    const currentMileage: number = vehicleSnap.val() ?? 0;
+
     const totalPrice = items.reduce((sum, item) => sum + item.price, 0);
-    const recordRef = doc(collection(firestore, SERVICE_RECORDS_COLLECTION));
-    const vehicleRef = doc(firestore, VEHICLES_COLLECTION, input.vehicleId);
+    const recordRef = push(ref(database, `serviceRecords/${userId}/${vehicleId}`));
+    const recordId = recordRef.key as string;
 
-    await runTransaction(firestore, async (transaction) => {
-      const vehicleSnap = await transaction.get(vehicleRef);
-      const currentMileage: number = vehicleSnap.data()?.['currentMileage'] ?? 0;
+    const itemsData: Record<string, ServiceItemInput> = {};
+    for (const item of items) {
+      const itemKey = push(ref(database, `serviceRecords/${userId}/${vehicleId}/${recordId}/items`)).key as string;
+      itemsData[itemKey] = item;
+    }
 
-      transaction.set(recordRef, {
+    const updates: Record<string, unknown> = {
+      [`serviceRecords/${userId}/${vehicleId}/${recordId}`]: {
         ...input,
         totalPrice,
-        date: Timestamp.fromDate(input.date ?? new Date()),
+        date: input.date ? input.date.getTime() : Date.now(),
         userId,
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
-      });
+        items: itemsData,
+      },
+    };
 
-      for (const item of items) {
-        const itemRef = doc(collection(recordRef, SERVICE_ITEMS_SUBCOLLECTION));
-        transaction.set(itemRef, { ...item, userId });
-      }
+    if (input.mileage > currentMileage) {
+      updates[`vehicles/${userId}/${vehicleId}/currentMileage`] = input.mileage;
+      updates[`vehicles/${userId}/${vehicleId}/updatedAt`] = serverTimestamp();
+    }
 
-      if (input.mileage > currentMileage) {
-        transaction.update(vehicleRef, { currentMileage: input.mileage, updatedAt: serverTimestamp() });
-      }
-    });
-
-    return recordRef.id;
+    await update(ref(database), updates);
+    return recordId;
   }
 }

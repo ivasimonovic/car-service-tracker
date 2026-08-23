@@ -7,9 +7,9 @@ import {
   signOut,
   updateProfile,
 } from 'firebase/auth';
-import { doc, serverTimestamp, setDoc } from 'firebase/firestore';
+import { ref, serverTimestamp, set } from 'firebase/database';
 import { BehaviorSubject, Observable, filter, map, take } from 'rxjs';
-import { auth, firestore } from '../core/firebase';
+import { auth, database } from '../core/firebase';
 import { AppUser } from '../models/app-user.model';
 
 function toAppUser(user: User | null): AppUser | null {
@@ -49,7 +49,7 @@ export class AuthService {
     const credential = await createUserWithEmailAndPassword(auth, email, password);
     await updateProfile(credential.user, { displayName });
 
-    await setDoc(doc(firestore, 'users', credential.user.uid), {
+    await set(ref(database, `users/${credential.user.uid}`), {
       uid: credential.user.uid,
       email: credential.user.email,
       displayName,

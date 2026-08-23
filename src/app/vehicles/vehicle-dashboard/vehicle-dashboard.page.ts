@@ -107,13 +107,7 @@ export class VehicleDashboardPage implements ViewWillEnter, ViewWillLeave {
         this.maintenanceStatuses.set([]);
         return;
       }
-      void this.maintenanceService
-        .getMaintenanceStatus(vehicle.currentMileage, records)
-        .then((statuses) => this.maintenanceStatuses.set(statuses))
-        .catch((error) => {
-          console.error('Greška pri računanju stanja održavanja', error);
-          this.loadError.set(`Greška pri računanju stanja održavanja (${error.code ?? error.message}).`);
-        });
+      this.maintenanceStatuses.set(this.maintenanceService.getMaintenanceStatus(vehicle.currentMileage, records));
     });
   }
 
@@ -191,7 +185,7 @@ export class VehicleDashboardPage implements ViewWillEnter, ViewWillLeave {
           text: 'Obriši',
           role: 'destructive',
           handler: async () => {
-            await this.serviceRecordService.deleteServiceRecord(recordId);
+            await this.serviceRecordService.deleteServiceRecord(this.id(), recordId);
           },
         },
       ],

@@ -1,40 +1,28 @@
 import { Injectable, inject } from '@angular/core';
-import {
-  DocumentData,
-  addDoc,
-  collection,
-  deleteDoc,
-  doc,
-  getDoc,
-  getDocs,
-  onSnapshot,
-  orderBy,
-  query,
-  serverTimestamp,
-  updateDoc,
-  where,
-} from 'firebase/firestore';
+import { get, onValue, push, ref, serverTimestamp, update } from 'firebase/database';
 import { Observable } from 'rxjs';
 import { AuthService } from '../auth/auth.service';
-import { firestore } from '../core/firebase';
+import { database } from '../core/firebase';
 import { Vehicle, VehicleInput } from '../models/vehicle.model';
 
-const VEHICLES_COLLECTION = 'vehicles';
-
-function toVehicle(id: string, data: DocumentData): Vehicle {
+function toVehicle(id: string, data: Record<string, unknown>): Vehicle {
   return {
     id,
-    userId: data['userId'],
-    brand: data['brand'],
-    model: data['model'],
-    year: data['year'],
-    registrationNumber: data['registrationNumber'],
-    fuelType: data['fuelType'],
-    engine: data['engine'],
-    currentMileage: data['currentMileage'],
-    createdAt: data['createdAt']?.toDate() ?? null,
-    updatedAt: data['updatedAt']?.toDate() ?? null,
+    userId: data['userId'] as string,
+    brand: data['brand'] as string,
+    model: data['model'] as string,
+    year: data['year'] as number,
+    registrationNumber: data['registrationNumber'] as string,
+    fuelType: data['fuelType'] as Vehicle['fuelType'],
+    engine: data['engine'] as string,
+    currentMileage: data['currentMileage'] as number,
+    createdAt: data['createdAt'] ? new Date(data['createdAt'] as number) : null,
+    updatedAt: data['updatedAt'] ? new Date(data['updatedAt'] as number) : null,
   };
+}
+
+function sortByCreatedDesc(vehicles: Vehicle[]): Vehicle[] {
+  return vehicles.slice().sort((a, b) => (b.createdAt?.getTime() ?? 0) - (a.createdAt?.getTime() ?? 0));
 }
 
 @Injectable({ providedIn: 'root' })
@@ -50,17 +38,16 @@ export class VehicleService {
         return;
       }
 
-      const vehiclesQuery = query(
-        collection(firestore, VEHICLES_COLLECTION),
-        where('userId', '==', userId),
-        orderBy('createdAt', 'desc'),
-      );
-
-      return onSnapshot(
-        vehiclesQuery,
-        (snapshot) => subscriber.next(snapshot.docs.map((docSnap) => toVehicle(docSnap.id, docSnap.data()))),
+      const unsubscribe = onValue(
+        ref(database, `vehicles/${userId}`),
+        (snapshot) => {
+          const value = snapshot.val() ?? {};
+          const vehicles = Object.entries(value).map(([id, data]) => toVehicle(id, data as Record<string, unknown>));
+          subscriber.next(sortByCreatedDesc(vehicles));
+        },
         (error) => subscriber.error(error),
       );
+      return unsubscribe;
     });
   }
 
@@ -68,51 +55,78 @@ export class VehicleService {
     const userId = this.authService.currentUser?.uid;
     if (!userId) return [];
 
-    const snapshot = await getDocs(query(collection(firestore, VEHICLES_COLLECTION), where('userId', '==', userId)));
-    return snapshot.docs.map((docSnap) => toVehicle(docSnap.id, docSnap.data()));
+    const snapshot = await get(ref(database, `vehicles/${userId}`));
+    const value = snapshot.val() ?? {};
+    return sortByCreatedDesc(
+      Object.entries(value).map(([id, data]) => toVehicle(id, data as Record<string, unknown>)),
+    );
   }
 
   async getVehicle(id: string): Promise<Vehicle | null> {
-    const snapshot = await getDoc(doc(firestore, VEHICLES_COLLECTION, id));
-    return snapshot.exists() ? toVehicle(snapshot.id, snapshot.data()) : null;
+    const userId = this.authService.currentUser?.uid;
+    if (!userId) return null;
+
+    const snapshot = await get(ref(database, `vehicles/${userId}/${id}`));
+    return snapshot.exists() ? toVehicle(id, snapshot.val()) : null;
   }
 
   getVehicleById$(id: string): Observable<Vehicle | null> {
-    return new Observable<Vehicle | null>((subscriber) =>
-      onSnapshot(
-        doc(firestore, VEHICLES_COLLECTION, id),
-        (snap) => subscriber.next(snap.exists() ? toVehicle(snap.id, snap.data()) : null),
+    return new Observable<Vehicle | null>((subscriber) => {
+      const userId = this.authService.currentUser?.uid;
+      if (!userId) {
+        subscriber.next(null);
+        subscriber.complete();
+        return;
+      }
+
+      const unsubscribe = onValue(
+        ref(database, `vehicles/${userId}/${id}`),
+        (snap) => subscriber.next(snap.exists() ? toVehicle(id, snap.val()) : null),
         (error) => subscriber.error(error),
-      ),
-    );
+      );
+      return unsubscribe;
+    });
   }
 
   async addVehicle(input: VehicleInput): Promise<string> {
     const userId = this.authService.currentUser?.uid;
     if (!userId) throw new Error('Korisnik nije prijavljen.');
 
-    const docRef = await addDoc(collection(firestore, VEHICLES_COLLECTION), {
+    const newRef = push(ref(database, `vehicles/${userId}`));
+    await update(newRef, {
       ...input,
       userId,
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
     });
-    return docRef.id;
+    return newRef.key as string;
   }
 
   async updateVehicle(id: string, input: VehicleInput): Promise<void> {
-    await updateDoc(doc(firestore, VEHICLES_COLLECTION, id), {
+    const userId = this.authService.currentUser?.uid;
+    if (!userId) throw new Error('Korisnik nije prijavljen.');
+
+    await update(ref(database, `vehicles/${userId}/${id}`), {
       ...input,
       updatedAt: serverTimestamp(),
     });
   }
 
   async deleteVehicle(id: string): Promise<void> {
-    await deleteDoc(doc(firestore, VEHICLES_COLLECTION, id));
+    const userId = this.authService.currentUser?.uid;
+    if (!userId) throw new Error('Korisnik nije prijavljen.');
+
+    await update(ref(database), {
+      [`vehicles/${userId}/${id}`]: null,
+      [`serviceRecords/${userId}/${id}`]: null,
+    });
   }
 
   async updateMileage(id: string, mileage: number): Promise<void> {
-    await updateDoc(doc(firestore, VEHICLES_COLLECTION, id), {
+    const userId = this.authService.currentUser?.uid;
+    if (!userId) throw new Error('Korisnik nije prijavljen.');
+
+    await update(ref(database, `vehicles/${userId}/${id}`), {
       currentMileage: mileage,
       updatedAt: serverTimestamp(),
     });

@@ -54,23 +54,23 @@ export class StatsService {
       })
       .sort((a, b) => b.totalSpent - a.totalSpent);
 
-    const upcomingPerVehicle = await Promise.all(
-      vehicles.map(async (vehicle) => {
+    const upcoming = vehicles
+      .flatMap((vehicle) => {
         const vehicleRecords = (recordsByVehicle.get(vehicle.id) ?? [])
           .slice()
           .sort((a, b) => (b.date?.getTime() ?? 0) - (a.date?.getTime() ?? 0));
-        const statuses = await this.maintenanceService.getMaintenanceStatus(vehicle.currentMileage, vehicleRecords);
-        return statuses
+        return this.maintenanceService
+          .getMaintenanceStatus(vehicle.currentMileage, vehicleRecords)
           .filter((status) => status.level !== 'green')
           .map((status): UpcomingMaintenance => ({ vehicle, status }));
-      }),
-    );
+      })
+      .sort((a, b) => a.status.remainingKm - b.status.remainingKm);
 
     return {
       totalSpent: vehicleSpending.reduce((sum, entry) => sum + entry.totalSpent, 0),
       totalServices: records.length,
       vehicleSpending,
-      upcoming: upcomingPerVehicle.flat().sort((a, b) => a.status.remainingKm - b.status.remainingKm),
+      upcoming,
     };
   }
 }

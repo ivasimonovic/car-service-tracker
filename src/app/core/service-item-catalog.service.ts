@@ -1,9 +1,9 @@
 import { Injectable } from '@angular/core';
-import { collection, getDocs, orderBy, query } from 'firebase/firestore';
+import { get, ref } from 'firebase/database';
 import { ServiceItemCatalogEntry } from '../models/service-item-catalog.model';
-import { firestore } from './firebase';
+import { database } from './firebase';
 
-const SERVICE_ITEM_TYPES_COLLECTION = 'serviceItemTypes';
+const SERVICE_ITEM_TYPES_PATH = 'serviceItemTypes';
 
 @Injectable({ providedIn: 'root' })
 export class ServiceItemCatalogService {
@@ -12,14 +12,11 @@ export class ServiceItemCatalogService {
   async getCatalog(): Promise<ServiceItemCatalogEntry[]> {
     if (this.cache) return this.cache;
 
-    const snapshot = await getDocs(
-      query(collection(firestore, SERVICE_ITEM_TYPES_COLLECTION), orderBy('name')),
-    );
-    this.cache = snapshot.docs.map((docSnap) => ({
-      id: docSnap.id,
-      name: docSnap.data()['name'],
-      replacementIntervalKm: docSnap.data()['replacementIntervalKm'],
-    }));
+    const snapshot = await get(ref(database, SERVICE_ITEM_TYPES_PATH));
+    const value = (snapshot.val() ?? {}) as Record<string, { name: string; replacementIntervalKm: number }>;
+    this.cache = Object.entries(value)
+      .map(([id, data]) => ({ id, name: data.name, replacementIntervalKm: data.replacementIntervalKm }))
+      .sort((a, b) => a.name.localeCompare(b.name));
     return this.cache;
   }
 }

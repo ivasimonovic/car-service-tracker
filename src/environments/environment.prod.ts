@@ -8,5 +8,6 @@ export const environment = {
     messagingSenderId: '226117118880',
     appId: '1:226117118880:web:010ef9acdac84c2ddf12c5',
     measurementId: 'G-8PDCC3BHZH',
+    databaseURL: 'https://car-service-tracker-88638-default-rtdb.firebaseio.com',
   },
 };
