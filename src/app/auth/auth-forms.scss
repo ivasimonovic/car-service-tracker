@@ -1,5 +1,6 @@
 .auth-content {
-  --background: var(--ion-color-step-50, #f4f5f8);
+  --background: #f4f5f8;
+  --color: #1f2430;
 }
 
 .auth-wrapper {
@@ -37,11 +38,11 @@
     font-size: 24px;
     font-weight: 800;
     margin: 8px 0 4px;
-    color: var(--ion-text-color, #1f2430);
+    color: #1f2430;
   }
 
   p {
-    color: var(--ion-color-medium);
+    color: #6b7280;
     margin: 0;
     font-size: 14px;
   }
@@ -51,6 +52,18 @@
   display: flex;
   flex-direction: column;
   gap: 14px;
+
+  ion-item {
+    --background: #ffffff;
+    --color: #1f2430;
+    --placeholder-color: #6b7280;
+    --border-color: #d7dce2;
+  }
+
+  ion-input,
+  ion-textarea {
+    --color: #1f2430;
+  }
 }
 
 .form-error {
@@ -68,7 +81,7 @@
   text-align: center;
   margin-top: 24px;
   font-size: 14px;
-  color: var(--ion-color-medium);
+  color: #6b7280;
 
   a {
     color: var(--ion-color-primary);
