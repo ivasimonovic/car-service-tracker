@@ -100,8 +100,6 @@ export class VehicleDashboardPage implements ViewWillEnter, ViewWillLeave {
       trashOutline,
     });
 
-    // Preračunava zeleno/žuto/crveno stanje održavanja kad god se učita vozilo ili se
-    // istorija servisa promeni (nova/obrisana stavka, live update kilometraže).
     effect(() => {
       const vehicle = this.vehicle();
       const records = this.serviceRecords();

@@ -9,12 +9,6 @@ const YELLOW_THRESHOLD_KM = 1000;
 export class MaintenanceService {
   private readonly serviceRecordService = inject(ServiceRecordService);
 
-  /**
-   * Za svaku stavku koja je ikada odrađena na vozilu, uzima poslednju (najskoriju) kilometražu
-   * na kojoj je odrađena i njen interval zamene, pa računa koliko km je ostalo do sledeće zamene.
-   * `records` mora biti sortirano po datumu opadajuće (kao što vraća getServiceRecords$),
-   * tako da prvo pojavljivanje imena stavke bude i najskorije.
-   */
   async getMaintenanceStatus(currentMileage: number, records: ServiceRecord[]): Promise<MaintenanceStatus[]> {
     const itemsByRecord = await Promise.all(
       records.map((record) => this.serviceRecordService.getServiceItems(record.id)),

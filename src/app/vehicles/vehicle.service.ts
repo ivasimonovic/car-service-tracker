@@ -41,7 +41,6 @@ function toVehicle(id: string, data: DocumentData): Vehicle {
 export class VehicleService {
   private readonly authService = inject(AuthService);
 
-  /** Vozila trenutno prijavljenog korisnika, uživo (real-time). */
   getVehicles$(): Observable<Vehicle[]> {
     return new Observable<Vehicle[]>((subscriber) => {
       const userId = this.authService.currentUser?.uid;
@@ -65,7 +64,6 @@ export class VehicleService {
     });
   }
 
-  /** Sva vozila trenutnog korisnika, jednokratno (za statistiku, bez uživo pretplate). */
   async getVehiclesOnce(): Promise<Vehicle[]> {
     const userId = this.authService.currentUser?.uid;
     if (!userId) return [];
@@ -79,7 +77,6 @@ export class VehicleService {
     return snapshot.exists() ? toVehicle(snapshot.id, snapshot.data()) : null;
   }
 
-  /** Jedno vozilo, uživo (real-time) - za Dashboard ekran. */
   getVehicleById$(id: string): Observable<Vehicle | null> {
     return new Observable<Vehicle | null>((subscriber) =>
       onSnapshot(

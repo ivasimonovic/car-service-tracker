@@ -30,7 +30,6 @@ export class StatsService {
   private readonly serviceRecordService = inject(ServiceRecordService);
   private readonly maintenanceService = inject(MaintenanceService);
 
-  /** Pregled preko svih vozila korisnika: troškovi i predstojeći/dospeli servisi. */
   async getOverview(): Promise<StatsOverview> {
     const [vehicles, records] = await Promise.all([
       this.vehicleService.getVehiclesOnce(),

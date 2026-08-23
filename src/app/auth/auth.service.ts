@@ -19,18 +19,15 @@ function toAppUser(user: User | null): AppUser | null {
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
-  // undefined = Firebase još nije obavestio o stanju prijave, null = neprijavljen korisnik
   private readonly _currentUser = new BehaviorSubject<AppUser | null | undefined>(undefined);
 
   readonly currentUser$: Observable<AppUser | null | undefined> = this._currentUser.asObservable();
 
-  /** Emituje tačno jednom, pošto Firebase potvrdi (ne)postojanje prijavljenog korisnika. */
   readonly authReady$: Observable<AppUser | null> = this._currentUser.pipe(
     filter((user): user is AppUser | null => user !== undefined),
     take(1),
   );
 
-  /** true kada je Firebase prvi put potvrdio stanje prijave (za splash/loading ekran). */
   readonly isReady$: Observable<boolean> = this._currentUser.pipe(map((user) => user !== undefined));
 
   constructor() {
@@ -70,7 +67,6 @@ export class AuthService {
     await signOut(auth);
   }
 
-  /** Firebase ID token (JWT) trenutno prijavljenog korisnika. */
   getIdToken(forceRefresh = false): Promise<string | null> {
     const user = auth.currentUser;
     if (!user) return Promise.resolve(null);

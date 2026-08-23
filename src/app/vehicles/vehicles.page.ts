@@ -61,8 +61,6 @@ export class VehiclesPage implements ViewWillEnter, ViewWillLeave {
     return name ? `Zdravo, ${name}` : 'Vaša vozila';
   }
 
-  /** Ionic keširanjem stranica ngOnInit se ne pokreće ponovo pri povratku na
-   *  listu, pa se pretplata na uživo podatke osvežava ovde umesto u ngOnInit. */
   ionViewWillEnter(): void {
     this.loadError.set(null);
     this.isLoading.set(true);

@@ -75,11 +75,9 @@ export class ServiceRecordFormPage implements OnInit {
   readonly isSubmitting = signal(false);
   readonly errorMessage = signal<string | null>(null);
 
-  /** Popunjava se samo u režimu izmene - stavke se tada prikazuju kao pregled, ne menjaju se. */
   readonly existingItems = signal<ServiceItem[]>([]);
   readonly existingTotalPrice = signal(0);
 
-  /** Popunjava se samo pri kreiranju - korisnik bira stavke iz kataloga sa cenom. */
   readonly catalogSelections = signal<CatalogSelection[]>([]);
   readonly selectedItems = computed(() => this.catalogSelections().filter((item) => item.selected));
   readonly newTotalPrice = computed(() =>
@@ -106,10 +104,6 @@ export class ServiceRecordFormPage implements OnInit {
           this.vehicleService.getVehicle(this.vehicleId()),
         ]);
         this.catalogSelections.set(catalog.map((entry) => ({ entry, selected: false, price: '' })));
-        // Naslov servisa se pri kreiranju automatski izvodi iz izabranih stavki (vidi onSubmit),
-        // pa polje ne treba da bude vidljivo korisniku - ovde samo zadovoljava validator.
-        // Kilometraža se unapred popunjava trenutnom kilometražom vozila (korisnik je i dalje
-        // može promeniti) - ako unese veću, addCompleteService automatski podiže vozilo na nju.
         this.form.patchValue({
           serviceType: 'Servis',
           mileage: vehicle ? String(vehicle.currentMileage) : '0',

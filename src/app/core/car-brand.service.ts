@@ -9,7 +9,6 @@ const VEHICLE_BRANDS_COLLECTION = 'vehicleBrands';
 export class CarBrandService {
   private cache: CarBrand[] | null = null;
 
-  /** Marke vozila iz zajedničkog kataloga (referentni podaci, ne menjaju se iz aplikacije). */
   async getBrands(): Promise<CarBrand[]> {
     if (this.cache) return this.cache;
 

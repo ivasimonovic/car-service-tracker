@@ -13,7 +13,6 @@ export interface ServiceRecord {
 
 export type ServiceRecordInput = Omit<ServiceRecord, 'id' | 'userId' | 'createdAt' | 'updatedAt'>;
 
-/** Stavka jednog servisa (npr. zamena ulja), čuva se u podkolekciji serviceRecords/{id}/items. */
 export interface ServiceItem {
   id: string;
   name: string;

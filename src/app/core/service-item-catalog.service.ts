@@ -9,7 +9,6 @@ const SERVICE_ITEM_TYPES_COLLECTION = 'serviceItemTypes';
 export class ServiceItemCatalogService {
   private cache: ServiceItemCatalogEntry[] | null = null;
 
-  /** Katalog uobičajenih stavki servisa (referentni podaci, ne menjaju se iz aplikacije). */
   async getCatalog(): Promise<ServiceItemCatalogEntry[]> {
     if (this.cache) return this.cache;
 

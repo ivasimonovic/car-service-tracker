@@ -52,7 +52,6 @@ function toServiceItem(id: string, data: DocumentData): ServiceItem {
 export class ServiceRecordService {
   private readonly authService = inject(AuthService);
 
-  /** Istorija servisa za jedno vozilo, uživo (real-time). */
   getServiceRecords$(vehicleId: string): Observable<ServiceRecord[]> {
     return new Observable<ServiceRecord[]>((subscriber) => {
       const userId = this.authService.currentUser?.uid;
@@ -62,11 +61,6 @@ export class ServiceRecordService {
         return;
       }
 
-      // Pravilo za serviceRecords proverava resource.data.userId, pa upit MORA
-      // eksplicitno da filtrira po userId - inače Firestore odbija celu listu sa
-      // permission-denied jer ne može da garantuje, samo iz oblika upita, da će
-      // vratiti isključivo dokumente trenutnog korisnika (bez obzira što bi u praksi
-      // svi rezultati za dato vehicleId realno pripadali njemu).
       const recordsQuery = query(
         collection(firestore, SERVICE_RECORDS_COLLECTION),
         where('vehicleId', '==', vehicleId),
@@ -83,7 +77,6 @@ export class ServiceRecordService {
     });
   }
 
-  /** Svi servisi trenutnog korisnika (svih vozila), jednokratno - za statistiku. */
   async getServiceRecordsForUser(): Promise<ServiceRecord[]> {
     const userId = this.authService.currentUser?.uid;
     if (!userId) return [];
@@ -115,8 +108,6 @@ export class ServiceRecordService {
     const userId = this.authService.currentUser?.uid;
     if (!userId) return [];
 
-    // Isti razlog kao kod getServiceRecords$: pravilo za items proverava resource.data.userId,
-    // pa upit mora eksplicitno da filtrira po userId, inače Firestore odbija celu listu.
     const itemsQuery = query(
       collection(firestore, SERVICE_RECORDS_COLLECTION, recordId, SERVICE_ITEMS_SUBCOLLECTION),
       where('userId', '==', userId),
@@ -125,11 +116,6 @@ export class ServiceRecordService {
     return snapshot.docs.map((docSnap) => toServiceItem(docSnap.id, docSnap.data()));
   }
 
-  /**
-   * Složeni slučaj korišćenja: jednim korisničkim dejstvom, u jednoj Firestore transakciji,
-   * kreira servis (serviceRecords), sve njegove stavke (podkolekcija items) i po potrebi
-   * podiže trenutnu kilometražu vozila - sve ili ništa, atomski.
-   */
   async addCompleteService(input: ServiceRecordInput, items: ServiceItemInput[]): Promise<string> {
     const userId = this.authService.currentUser?.uid;
     if (!userId) throw new Error('Korisnik nije prijavljen.');
