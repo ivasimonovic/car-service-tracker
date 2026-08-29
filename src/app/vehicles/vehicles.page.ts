@@ -13,11 +13,9 @@ import {
   IonTitle,
   IonToolbar,
   ViewWillEnter,
-  ViewWillLeave,
 } from '@ionic/angular';
 import { addIcons } from 'ionicons';
 import { addOutline, carSportOutline, speedometerOutline, trashOutline } from 'ionicons/icons';
-import { Subscription } from 'rxjs';
 import { AuthService } from '../auth/auth.service';
 import { Vehicle } from '../models/vehicle.model';
 import { VehicleService } from './vehicle.service';
@@ -40,12 +38,12 @@ import { VehicleService } from './vehicle.service';
     IonSpinner,
   ],
 })
-export class VehiclesPage implements ViewWillEnter, ViewWillLeave {
+export class VehiclesPage implements ViewWillEnter {
   private readonly authService = inject(AuthService);
   private readonly vehicleService = inject(VehicleService);
   private readonly alertController = inject(AlertController);
 
-  private vehiclesSubscription: Subscription | null = null;
+  private loadToken = 0;
 
   readonly currentUser = this.authService.currentUser;
   readonly vehicles = signal<Vehicle[]>([]);
@@ -61,25 +59,26 @@ export class VehiclesPage implements ViewWillEnter, ViewWillLeave {
     return name ? `Zdravo, ${name}` : 'Vaša vozila';
   }
 
-  ionViewWillEnter(): void {
-    this.loadError.set(null);
-    this.isLoading.set(true);
-    this.vehiclesSubscription = this.vehicleService.getVehicles$().subscribe({
-      next: (vehicles) => {
-        this.vehicles.set(vehicles);
-        this.isLoading.set(false);
-      },
-      error: (error) => {
-        console.error('Greška pri učitavanju vozila', error);
-        this.loadError.set(`Greška pri učitavanju vozila (${error.code ?? error.message}).`);
-        this.isLoading.set(false);
-      },
-    });
+  async ionViewWillEnter(): Promise<void> {
+    await this.load();
   }
 
-  ionViewWillLeave(): void {
-    this.vehiclesSubscription?.unsubscribe();
-    this.vehiclesSubscription = null;
+  private async load(): Promise<void> {
+    this.loadError.set(null);
+    this.isLoading.set(true);
+    const token = ++this.loadToken;
+
+    try {
+      const vehicles = await this.vehicleService.getVehicles();
+      if (token !== this.loadToken) return;
+      this.vehicles.set(vehicles);
+    } catch (error: any) {
+      if (token !== this.loadToken) return;
+      console.error('Greška pri učitavanju vozila', error);
+      this.loadError.set(`Greška pri učitavanju vozila (${error.code ?? error.message}).`);
+    } finally {
+      if (token === this.loadToken) this.isLoading.set(false);
+    }
   }
 
   async onDelete(vehicleId: string, event: Event): Promise<void> {
@@ -96,6 +95,7 @@ export class VehiclesPage implements ViewWillEnter, ViewWillLeave {
           role: 'destructive',
           handler: async () => {
             await this.vehicleService.deleteVehicle(vehicleId);
+            await this.load();
           },
         },
       ],

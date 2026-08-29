@@ -1,8 +1,6 @@
 import { Injectable, inject } from '@angular/core';
-import { get, onValue, push, ref, serverTimestamp, update } from 'firebase/database';
-import { Observable } from 'rxjs';
 import { AuthService } from '../auth/auth.service';
-import { database } from '../core/firebase';
+import { RtdbService, SERVER_TIMESTAMP } from '../core/rtdb.service';
 import { Vehicle, VehicleInput } from '../models/vehicle.model';
 
 function toVehicle(id: string, data: Record<string, unknown>): Vehicle {
@@ -28,87 +26,45 @@ function sortByCreatedDesc(vehicles: Vehicle[]): Vehicle[] {
 @Injectable({ providedIn: 'root' })
 export class VehicleService {
   private readonly authService = inject(AuthService);
+  private readonly rtdb = inject(RtdbService);
 
-  getVehicles$(): Observable<Vehicle[]> {
-    return new Observable<Vehicle[]>((subscriber) => {
-      const userId = this.authService.currentUser?.uid;
-      if (!userId) {
-        subscriber.next([]);
-        subscriber.complete();
-        return;
-      }
-
-      const unsubscribe = onValue(
-        ref(database, `vehicles/${userId}`),
-        (snapshot) => {
-          const value = snapshot.val() ?? {};
-          const vehicles = Object.entries(value).map(([id, data]) => toVehicle(id, data as Record<string, unknown>));
-          subscriber.next(sortByCreatedDesc(vehicles));
-        },
-        (error) => subscriber.error(error),
-      );
-      return unsubscribe;
-    });
-  }
-
-  async getVehiclesOnce(): Promise<Vehicle[]> {
+  async getVehicles(): Promise<Vehicle[]> {
     const userId = this.authService.currentUser?.uid;
     if (!userId) return [];
 
-    const snapshot = await get(ref(database, `vehicles/${userId}`));
-    const value = snapshot.val() ?? {};
-    return sortByCreatedDesc(
-      Object.entries(value).map(([id, data]) => toVehicle(id, data as Record<string, unknown>)),
-    );
+    const value = (await this.rtdb.get<Record<string, Record<string, unknown>>>(`vehicles/${userId}`)) ?? {};
+    return sortByCreatedDesc(Object.entries(value).map(([id, data]) => toVehicle(id, data)));
   }
 
   async getVehicle(id: string): Promise<Vehicle | null> {
     const userId = this.authService.currentUser?.uid;
     if (!userId) return null;
 
-    const snapshot = await get(ref(database, `vehicles/${userId}/${id}`));
-    return snapshot.exists() ? toVehicle(id, snapshot.val()) : null;
-  }
-
-  getVehicleById$(id: string): Observable<Vehicle | null> {
-    return new Observable<Vehicle | null>((subscriber) => {
-      const userId = this.authService.currentUser?.uid;
-      if (!userId) {
-        subscriber.next(null);
-        subscriber.complete();
-        return;
-      }
-
-      const unsubscribe = onValue(
-        ref(database, `vehicles/${userId}/${id}`),
-        (snap) => subscriber.next(snap.exists() ? toVehicle(id, snap.val()) : null),
-        (error) => subscriber.error(error),
-      );
-      return unsubscribe;
-    });
+    const data = await this.rtdb.get<Record<string, unknown>>(`vehicles/${userId}/${id}`);
+    return data ? toVehicle(id, data) : null;
   }
 
   async addVehicle(input: VehicleInput): Promise<string> {
     const userId = this.authService.currentUser?.uid;
     if (!userId) throw new Error('Korisnik nije prijavljen.');
 
-    const newRef = push(ref(database, `vehicles/${userId}`));
-    await update(newRef, {
+    const id = this.rtdb.newKey();
+    await this.rtdb.put(`vehicles/${userId}/${id}`, {
       ...input,
       userId,
-      createdAt: serverTimestamp(),
-      updatedAt: serverTimestamp(),
+      createdAt: SERVER_TIMESTAMP,
+      updatedAt: SERVER_TIMESTAMP,
     });
-    return newRef.key as string;
+    return id;
   }
 
   async updateVehicle(id: string, input: VehicleInput): Promise<void> {
     const userId = this.authService.currentUser?.uid;
     if (!userId) throw new Error('Korisnik nije prijavljen.');
 
-    await update(ref(database, `vehicles/${userId}/${id}`), {
+    await this.rtdb.patch(`vehicles/${userId}/${id}`, {
       ...input,
-      updatedAt: serverTimestamp(),
+      updatedAt: SERVER_TIMESTAMP,
     });
   }
 
@@ -116,7 +72,7 @@ export class VehicleService {
     const userId = this.authService.currentUser?.uid;
     if (!userId) throw new Error('Korisnik nije prijavljen.');
 
-    await update(ref(database), {
+    await this.rtdb.patch('', {
       [`vehicles/${userId}/${id}`]: null,
       [`serviceRecords/${userId}/${id}`]: null,
     });
@@ -126,9 +82,9 @@ export class VehicleService {
     const userId = this.authService.currentUser?.uid;
     if (!userId) throw new Error('Korisnik nije prijavljen.');
 
-    await update(ref(database, `vehicles/${userId}/${id}`), {
+    await this.rtdb.patch(`vehicles/${userId}/${id}`, {
       currentMileage: mileage,
-      updatedAt: serverTimestamp(),
+      updatedAt: SERVER_TIMESTAMP,
     });
   }
 }

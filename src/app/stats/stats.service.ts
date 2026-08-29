@@ -32,7 +32,7 @@ export class StatsService {
 
   async getOverview(): Promise<StatsOverview> {
     const [vehicles, records] = await Promise.all([
-      this.vehicleService.getVehiclesOnce(),
+      this.vehicleService.getVehicles(),
       this.serviceRecordService.getServiceRecordsForUser(),
     ]);
 

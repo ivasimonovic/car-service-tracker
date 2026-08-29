@@ -16,7 +16,7 @@ Hibridna mobilna aplikacija za praćenje servisa i održavanja vozila. Umesto be
 - [Angular](https://angular.dev/) 22 (standalone komponente, signali)
 - [Ionic](https://ionicframework.com/) 9
 - [Firebase Authentication](https://firebase.google.com/docs/auth) — prijava/registracija
-- [Firebase Realtime Database](https://firebase.google.com/docs/database) — čuvanje podataka, uživo osvežavanje
+- [Firebase Realtime Database](https://firebase.google.com/docs/database) — čuvanje podataka, pristup preko REST/HTTP zahteva
 
 ## Pokretanje lokalno
 

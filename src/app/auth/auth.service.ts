@@ -1,44 +1,21 @@
-import { Injectable } from '@angular/core';
-import {
-  User,
-  createUserWithEmailAndPassword,
-  onAuthStateChanged,
-  signInWithEmailAndPassword,
-  signOut,
-  updateProfile,
-} from 'firebase/auth';
-import { ref, serverTimestamp, set } from 'firebase/database';
-import { BehaviorSubject, Observable, filter, map, take } from 'rxjs';
-import { auth, database } from '../core/firebase';
+import { HttpErrorResponse } from '@angular/common/http';
+import { Injectable, inject } from '@angular/core';
+import { Observable } from 'rxjs';
+import { AuthSessionService } from '../core/auth-session.service';
+import { RtdbService, SERVER_TIMESTAMP } from '../core/rtdb.service';
 import { AppUser } from '../models/app-user.model';
-
-function toAppUser(user: User | null): AppUser | null {
-  if (!user) return null;
-  return { uid: user.uid, email: user.email, displayName: user.displayName };
-}
 
 @Injectable({ providedIn: 'root' })
 export class AuthService {
-  private readonly _currentUser = new BehaviorSubject<AppUser | null | undefined>(undefined);
+  private readonly session = inject(AuthSessionService);
+  private readonly rtdb = inject(RtdbService);
 
-  readonly currentUser$: Observable<AppUser | null | undefined> = this._currentUser.asObservable();
-
-  readonly authReady$: Observable<AppUser | null> = this._currentUser.pipe(
-    filter((user): user is AppUser | null => user !== undefined),
-    take(1),
-  );
-
-  readonly isReady$: Observable<boolean> = this._currentUser.pipe(map((user) => user !== undefined));
-
-  constructor() {
-    onAuthStateChanged(auth, (user) => {
-      this._currentUser.next(toAppUser(user));
-    });
-  }
+  readonly currentUser$: Observable<AppUser | null | undefined> = this.session.currentUser$;
+  readonly authReady$: Observable<AppUser | null> = this.session.authReady$;
+  readonly isReady$: Observable<boolean> = this.session.isReady$;
 
   get currentUser(): AppUser | null {
-    const value = this._currentUser.value;
-    return value === undefined ? null : value;
+    return this.session.currentUser;
   }
 
   get isAuthenticated(): boolean {
@@ -46,48 +23,49 @@ export class AuthService {
   }
 
   async register(email: string, password: string, displayName: string): Promise<void> {
-    const credential = await createUserWithEmailAndPassword(auth, email, password);
-    await updateProfile(credential.user, { displayName });
+    await this.session.signUp(email, password);
+    await this.session.updateDisplayName(displayName);
 
-    await set(ref(database, `users/${credential.user.uid}`), {
-      uid: credential.user.uid,
-      email: credential.user.email,
+    const user = this.session.currentUser;
+    if (!user) throw new Error('Registracija nije uspela.');
+
+    await this.rtdb.put(`users/${user.uid}`, {
+      uid: user.uid,
+      email: user.email,
       displayName,
-      createdAt: serverTimestamp(),
+      createdAt: SERVER_TIMESTAMP,
     });
-
-    this._currentUser.next(toAppUser(credential.user));
   }
 
   async logIn(email: string, password: string): Promise<void> {
-    await signInWithEmailAndPassword(auth, email, password);
+    await this.session.signIn(email, password);
   }
 
   async logOut(): Promise<void> {
-    await signOut(auth);
+    this.session.clear();
   }
 
   getIdToken(forceRefresh = false): Promise<string | null> {
-    const user = auth.currentUser;
-    if (!user) return Promise.resolve(null);
-    return user.getIdToken(forceRefresh);
+    return this.session.getIdToken(forceRefresh);
   }
 
   mapAuthError(error: unknown): string {
-    const code = (error as { code?: string })?.code ?? '';
+    const message = (error as HttpErrorResponse)?.error?.error?.message ?? '';
 
-    switch (code) {
-      case 'auth/invalid-email':
-        return 'Email adresa nije ispravna.';
-      case 'auth/email-already-in-use':
+    if (typeof message === 'string' && message.startsWith('WEAK_PASSWORD')) {
+      return 'Lozinka mora imati bar 6 karaktera.';
+    }
+
+    switch (message) {
+      case 'EMAIL_EXISTS':
         return 'Nalog sa ovom email adresom već postoji.';
-      case 'auth/weak-password':
-        return 'Lozinka mora imati bar 6 karaktera.';
-      case 'auth/invalid-credential':
-      case 'auth/user-not-found':
-      case 'auth/wrong-password':
+      case 'EMAIL_NOT_FOUND':
+      case 'INVALID_PASSWORD':
+      case 'INVALID_LOGIN_CREDENTIALS':
         return 'Neispravan email ili lozinka.';
-      case 'auth/too-many-requests':
+      case 'INVALID_EMAIL':
+        return 'Email adresa nije ispravna.';
+      case 'TOO_MANY_ATTEMPTS_TRY_LATER':
         return 'Previše neuspešnih pokušaja. Pokušajte ponovo kasnije.';
       default:
         return 'Došlo je do greške. Pokušajte ponovo.';

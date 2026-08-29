@@ -1,8 +1,6 @@
 import { Injectable, inject } from '@angular/core';
-import { get, onValue, push, ref, serverTimestamp, update } from 'firebase/database';
-import { Observable } from 'rxjs';
 import { AuthService } from '../auth/auth.service';
-import { database } from '../core/firebase';
+import { RtdbService, SERVER_TIMESTAMP } from '../core/rtdb.service';
 import { ServiceItem, ServiceItemInput, ServiceRecord, ServiceRecordInput } from '../models/service-record.model';
 
 function toServiceItems(raw: Record<string, unknown> | undefined): ServiceItem[] {
@@ -41,37 +39,25 @@ function sortByDateDesc(records: ServiceRecord[]): ServiceRecord[] {
 @Injectable({ providedIn: 'root' })
 export class ServiceRecordService {
   private readonly authService = inject(AuthService);
+  private readonly rtdb = inject(RtdbService);
 
-  getServiceRecords$(vehicleId: string): Observable<ServiceRecord[]> {
-    return new Observable<ServiceRecord[]>((subscriber) => {
-      const userId = this.authService.currentUser?.uid;
-      if (!userId) {
-        subscriber.next([]);
-        subscriber.complete();
-        return;
-      }
+  async getServiceRecords(vehicleId: string): Promise<ServiceRecord[]> {
+    const userId = this.authService.currentUser?.uid;
+    if (!userId) return [];
 
-      const unsubscribe = onValue(
-        ref(database, `serviceRecords/${userId}/${vehicleId}`),
-        (snapshot) => {
-          const value = snapshot.val() ?? {};
-          const records = Object.entries(value).map(([id, data]) =>
-            toServiceRecord(id, data as Record<string, unknown>),
-          );
-          subscriber.next(sortByDateDesc(records));
-        },
-        (error) => subscriber.error(error),
-      );
-      return unsubscribe;
-    });
+    const value = (await this.rtdb.get<Record<string, Record<string, unknown>>>(
+      `serviceRecords/${userId}/${vehicleId}`,
+    )) ?? {};
+    const records = Object.entries(value).map(([id, data]) => toServiceRecord(id, data));
+    return sortByDateDesc(records);
   }
 
   async getServiceRecordsForUser(): Promise<ServiceRecord[]> {
     const userId = this.authService.currentUser?.uid;
     if (!userId) return [];
 
-    const snapshot = await get(ref(database, `serviceRecords/${userId}`));
-    const byVehicle = (snapshot.val() ?? {}) as Record<string, Record<string, unknown>>;
+    const byVehicle =
+      (await this.rtdb.get<Record<string, Record<string, unknown>>>(`serviceRecords/${userId}`)) ?? {};
     const records: ServiceRecord[] = [];
     for (const vehicleRecords of Object.values(byVehicle)) {
       for (const [id, data] of Object.entries(vehicleRecords)) {
@@ -85,18 +71,18 @@ export class ServiceRecordService {
     const userId = this.authService.currentUser?.uid;
     if (!userId) return null;
 
-    const snapshot = await get(ref(database, `serviceRecords/${userId}/${vehicleId}/${id}`));
-    return snapshot.exists() ? toServiceRecord(id, snapshot.val()) : null;
+    const data = await this.rtdb.get<Record<string, unknown>>(`serviceRecords/${userId}/${vehicleId}/${id}`);
+    return data ? toServiceRecord(id, data) : null;
   }
 
   async updateServiceRecord(vehicleId: string, id: string, input: ServiceRecordInput): Promise<void> {
     const userId = this.authService.currentUser?.uid;
     if (!userId) throw new Error('Korisnik nije prijavljen.');
 
-    await update(ref(database, `serviceRecords/${userId}/${vehicleId}/${id}`), {
+    await this.rtdb.patch(`serviceRecords/${userId}/${vehicleId}/${id}`, {
       ...input,
       date: input.date ? input.date.getTime() : Date.now(),
-      updatedAt: serverTimestamp(),
+      updatedAt: SERVER_TIMESTAMP,
     });
   }
 
@@ -104,7 +90,7 @@ export class ServiceRecordService {
     const userId = this.authService.currentUser?.uid;
     if (!userId) throw new Error('Korisnik nije prijavljen.');
 
-    await update(ref(database), {
+    await this.rtdb.patch('', {
       [`serviceRecords/${userId}/${vehicleId}/${id}`]: null,
     });
   }
@@ -114,17 +100,15 @@ export class ServiceRecordService {
     if (!userId) throw new Error('Korisnik nije prijavljen.');
 
     const vehicleId = input.vehicleId;
-    const vehicleSnap = await get(ref(database, `vehicles/${userId}/${vehicleId}/currentMileage`));
-    const currentMileage: number = vehicleSnap.val() ?? 0;
+    const currentMileage =
+      (await this.rtdb.get<number>(`vehicles/${userId}/${vehicleId}/currentMileage`)) ?? 0;
 
     const totalPrice = items.reduce((sum, item) => sum + item.price, 0);
-    const recordRef = push(ref(database, `serviceRecords/${userId}/${vehicleId}`));
-    const recordId = recordRef.key as string;
+    const recordId = this.rtdb.newKey();
 
     const itemsData: Record<string, ServiceItemInput> = {};
     for (const item of items) {
-      const itemKey = push(ref(database, `serviceRecords/${userId}/${vehicleId}/${recordId}/items`)).key as string;
-      itemsData[itemKey] = item;
+      itemsData[this.rtdb.newKey()] = item;
     }
 
     const updates: Record<string, unknown> = {
@@ -133,18 +117,18 @@ export class ServiceRecordService {
         totalPrice,
         date: input.date ? input.date.getTime() : Date.now(),
         userId,
-        createdAt: serverTimestamp(),
-        updatedAt: serverTimestamp(),
+        createdAt: SERVER_TIMESTAMP,
+        updatedAt: SERVER_TIMESTAMP,
         items: itemsData,
       },
     };
 
     if (input.mileage > currentMileage) {
       updates[`vehicles/${userId}/${vehicleId}/currentMileage`] = input.mileage;
-      updates[`vehicles/${userId}/${vehicleId}/updatedAt`] = serverTimestamp();
+      updates[`vehicles/${userId}/${vehicleId}/updatedAt`] = SERVER_TIMESTAMP;
     }
 
-    await update(ref(database), updates);
+    await this.rtdb.patch('', updates);
     return recordId;
   }
 }

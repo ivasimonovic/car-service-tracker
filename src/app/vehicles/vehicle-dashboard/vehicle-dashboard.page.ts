@@ -22,7 +22,6 @@ import {
   IonTitle,
   IonToolbar,
   ViewWillEnter,
-  ViewWillLeave,
 } from '@ionic/angular';
 import { addIcons } from 'ionicons';
 import {
@@ -35,7 +34,6 @@ import {
   speedometerOutline,
   trashOutline,
 } from 'ionicons/icons';
-import { Subscription } from 'rxjs';
 import { MaintenanceStatus } from '../../models/maintenance-status.model';
 import { ServiceRecord } from '../../models/service-record.model';
 import { Vehicle } from '../../models/vehicle.model';
@@ -71,7 +69,7 @@ import { VehicleService } from '../vehicle.service';
     IonFabButton,
   ],
 })
-export class VehicleDashboardPage implements ViewWillEnter, ViewWillLeave {
+export class VehicleDashboardPage implements ViewWillEnter {
   private readonly vehicleService = inject(VehicleService);
   private readonly serviceRecordService = inject(ServiceRecordService);
   private readonly maintenanceService = inject(MaintenanceService);
@@ -85,8 +83,7 @@ export class VehicleDashboardPage implements ViewWillEnter, ViewWillLeave {
   readonly maintenanceStatuses = signal<MaintenanceStatus[]>([]);
   readonly loadError = signal<string | null>(null);
 
-  private vehicleSubscription: Subscription | null = null;
-  private recordsSubscription: Subscription | null = null;
+  private loadToken = 0;
 
   constructor() {
     addIcons({
@@ -111,37 +108,36 @@ export class VehicleDashboardPage implements ViewWillEnter, ViewWillLeave {
     });
   }
 
-  ionViewWillEnter(): void {
+  async ionViewWillEnter(): Promise<void> {
     this.loadError.set(null);
     this.recordsLoaded.set(false);
-    const vehicleId = this.id();
-
-    this.vehicleSubscription = this.vehicleService.getVehicleById$(vehicleId).subscribe({
-      next: (vehicle) => this.vehicle.set(vehicle),
-      error: (error) => {
-        console.error('Greška pri učitavanju vozila', error);
-        this.loadError.set(`Greška pri učitavanju vozila (${error.code ?? error.message}).`);
-      },
-    });
-
-    this.recordsSubscription = this.serviceRecordService.getServiceRecords$(vehicleId).subscribe({
-      next: (records) => {
-        this.serviceRecords.set(records);
-        this.recordsLoaded.set(true);
-      },
-      error: (error) => {
-        console.error('Greška pri učitavanju istorije servisa', error);
-        this.loadError.set(`Greška pri učitavanju istorije servisa (${error.code ?? error.message}).`);
-        this.recordsLoaded.set(true);
-      },
-    });
+    await this.load();
   }
 
-  ionViewWillLeave(): void {
-    this.vehicleSubscription?.unsubscribe();
-    this.vehicleSubscription = null;
-    this.recordsSubscription?.unsubscribe();
-    this.recordsSubscription = null;
+  private async load(): Promise<void> {
+    const vehicleId = this.id();
+    const token = ++this.loadToken;
+
+    try {
+      const vehicle = await this.vehicleService.getVehicle(vehicleId);
+      if (token === this.loadToken) this.vehicle.set(vehicle);
+    } catch (error: any) {
+      if (token !== this.loadToken) return;
+      console.error('Greška pri učitavanju vozila', error);
+      this.loadError.set(`Greška pri učitavanju vozila (${error.code ?? error.message}).`);
+    }
+
+    try {
+      const records = await this.serviceRecordService.getServiceRecords(vehicleId);
+      if (token !== this.loadToken) return;
+      this.serviceRecords.set(records);
+      this.recordsLoaded.set(true);
+    } catch (error: any) {
+      if (token !== this.loadToken) return;
+      console.error('Greška pri učitavanju istorije servisa', error);
+      this.loadError.set(`Greška pri učitavanju istorije servisa (${error.code ?? error.message}).`);
+      this.recordsLoaded.set(true);
+    }
   }
 
   async onUpdateMileage(): Promise<void> {
@@ -167,6 +163,7 @@ export class VehicleDashboardPage implements ViewWillEnter, ViewWillLeave {
             const mileage = Number(data.mileage);
             if (!Number.isFinite(mileage) || mileage < vehicle.currentMileage) return false;
             await this.vehicleService.updateMileage(vehicle.id, mileage);
+            await this.load();
             return true;
           },
         },
@@ -186,6 +183,7 @@ export class VehicleDashboardPage implements ViewWillEnter, ViewWillLeave {
           role: 'destructive',
           handler: async () => {
             await this.serviceRecordService.deleteServiceRecord(this.id(), recordId);
+            await this.load();
           },
         },
       ],
