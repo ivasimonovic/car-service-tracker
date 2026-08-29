@@ -17,7 +17,6 @@ import {
 import { addIcons } from 'ionicons';
 import { addOutline, carSportOutline, speedometerOutline, trashOutline } from 'ionicons/icons';
 import { AuthService } from '../auth/auth.service';
-import { Vehicle } from '../models/vehicle.model';
 import { VehicleService } from './vehicle.service';
 
 @Component({
@@ -46,7 +45,7 @@ export class VehiclesPage implements ViewWillEnter {
   private loadToken = 0;
 
   readonly currentUser = this.authService.currentUser;
-  readonly vehicles = signal<Vehicle[]>([]);
+  readonly vehicles = this.vehicleService.vehicles;
   readonly isLoading = signal(true);
   readonly loadError = signal<string | null>(null);
 
@@ -65,13 +64,16 @@ export class VehiclesPage implements ViewWillEnter {
 
   private async load(): Promise<void> {
     this.loadError.set(null);
-    this.isLoading.set(true);
+    // Only show the full-page spinner when we have nothing to show yet — the
+    // shared vehicle list is already up to date right after an add/edit/delete,
+    // so this refetch just quietly confirms it in the background.
+    if (this.vehicleService.vehicles().length === 0) {
+      this.isLoading.set(true);
+    }
     const token = ++this.loadToken;
 
     try {
-      const vehicles = await this.vehicleService.getVehicles();
-      if (token !== this.loadToken) return;
-      this.vehicles.set(vehicles);
+      await this.vehicleService.loadVehicles();
     } catch (error: any) {
       if (token !== this.loadToken) return;
       console.error('Greška pri učitavanju vozila', error);
@@ -95,7 +97,6 @@ export class VehiclesPage implements ViewWillEnter {
           role: 'destructive',
           handler: async () => {
             await this.vehicleService.deleteVehicle(vehicleId);
-            await this.load();
           },
         },
       ],

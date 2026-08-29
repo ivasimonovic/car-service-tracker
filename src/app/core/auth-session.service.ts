@@ -77,13 +77,18 @@ export class AuthSessionService {
   }
 
   private applyAuthResponse(data: IdentityAuthResponse, displayNameOverride?: string): void {
+    const previous = this.session;
+    // Some Identity Toolkit responses (e.g. a profile-only update) can omit a
+    // field like idToken/refreshToken. Falling back to the previous session's
+    // value instead of overwriting it with undefined keeps an already-valid
+    // session intact rather than silently corrupting it.
     this.session = {
       uid: data.localId,
-      email: data.email ?? null,
-      displayName: displayNameOverride ?? data.displayName ?? null,
-      idToken: data.idToken,
-      refreshToken: data.refreshToken,
-      expiresAt: Date.now() + Number(data.expiresIn) * 1000,
+      email: data.email ?? previous?.email ?? null,
+      displayName: displayNameOverride ?? data.displayName ?? previous?.displayName ?? null,
+      idToken: data.idToken || previous?.idToken || '',
+      refreshToken: data.refreshToken || previous?.refreshToken || '',
+      expiresAt: data.expiresIn ? Date.now() + Number(data.expiresIn) * 1000 : (previous?.expiresAt ?? Date.now()),
     };
     this.writeStorage();
     this._currentUser.next(toAppUser(this.session));

@@ -15,7 +15,13 @@
   } @else {
     <form class="vehicle-form" [class.is-saving]="isSubmitting()" [formGroup]="form" (ngSubmit)="onSubmit()">
       <ion-item fill="outline" shape="round">
-        <ion-select formControlName="brand" label="Marka" labelPlacement="floating" interface="popover">
+        <ion-select
+          formControlName="brand"
+          label="Marka"
+          labelPlacement="floating"
+          interface="alert"
+          [interfaceOptions]="{ header: 'Marka vozila' }"
+        >
           @for (brand of brands(); track brand.id) {
             <ion-select-option [value]="brand.name">{{ brand.name }}</ion-select-option>
           }
@@ -65,7 +71,13 @@
       }
 
       <ion-item fill="outline" shape="round">
-        <ion-select formControlName="fuelType" label="Gorivo" labelPlacement="floating" interface="popover">
+        <ion-select
+          formControlName="fuelType"
+          label="Gorivo"
+          labelPlacement="floating"
+          interface="alert"
+          [interfaceOptions]="{ header: 'Vrsta goriva' }"
+        >
           @for (option of fuelTypes; track option.value) {
             <ion-select-option [value]="option.value">{{ option.label }}</ion-select-option>
           }

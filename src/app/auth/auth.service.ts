@@ -23,18 +23,31 @@ export class AuthService {
   }
 
   async register(email: string, password: string, displayName: string): Promise<void> {
+    // Only the account itself is critical for registration to count as successful.
+    // Setting the display name and writing the profile record are best-effort:
+    // if either hiccups, the account still exists and the user is already signed
+    // in, so we must not surface a scary error for something that isn't fatal.
     await this.session.signUp(email, password);
-    await this.session.updateDisplayName(displayName);
+
+    try {
+      await this.session.updateDisplayName(displayName);
+    } catch (error) {
+      console.error('Neuspelo postavljanje imena pri registraciji', error);
+    }
 
     const user = this.session.currentUser;
-    if (!user) throw new Error('Registracija nije uspela.');
+    if (!user) return;
 
-    await this.rtdb.put(`users/${user.uid}`, {
-      uid: user.uid,
-      email: user.email,
-      displayName,
-      createdAt: SERVER_TIMESTAMP,
-    });
+    try {
+      await this.rtdb.put(`users/${user.uid}`, {
+        uid: user.uid,
+        email: user.email,
+        displayName: user.displayName ?? displayName,
+        createdAt: SERVER_TIMESTAMP,
+      });
+    } catch (error) {
+      console.error('Neuspelo čuvanje profila pri registraciji', error);
+    }
   }
 
   async logIn(email: string, password: string): Promise<void> {
